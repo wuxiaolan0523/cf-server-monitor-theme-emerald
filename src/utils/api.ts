@@ -346,8 +346,8 @@ export function adaptServer(server: CfServer, apiIndex: number): AdaptedServer {
   const price = parsePrice(server.price)
   const updatedAt = timestamp(wire.report_timestamp ?? server.last_updated ?? server.timestamp, 0)
   const load = String(server.load_avg ?? '').split(WHITESPACE_REGEX).map(finiteNumber)
-  const bootTime = timestamp(server.boot_time, Date.now())
   const now = Date.now()
+  const bootTime = timestamp(server.boot_time, 0)
   const online = server.is_online ?? (updatedAt > 0 && now - updatedAt < ONLINE_THRESHOLD_MS)
   const ping: Record<string, NodeStatusPing> = {
     ct: pingEntry('电信', server.ping_ct, server.loss_ct),
@@ -367,7 +367,7 @@ export function adaptServer(server: CfServer, apiIndex: number): AdaptedServer {
       arch: server.arch || '-',
       cpu_cores: finiteNumber(server.cpu_cores),
       os: server.os || '-',
-      kernel_version: '-',
+      boot_time: bootTime ? new Date(bootTime).toISOString() : '',
       gpu_name: server.gpu_info || '',
       ipv4: server.ip_v4,
       ipv6: server.ip_v6,

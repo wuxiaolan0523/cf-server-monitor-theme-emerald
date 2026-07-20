@@ -24,7 +24,7 @@ export interface NodeData {
   arch: string
   cpu_cores: number
   os: string
-  kernel_version: string
+  boot_time: string
   gpu_name?: string
   ipv4?: string
   ipv6?: string
@@ -155,7 +155,7 @@ const useNodesStore = defineStore('nodes', () => {
       arch: client.arch,
       cpu_cores: client.cpu_cores,
       os: client.os,
-      kernel_version: client.kernel_version,
+      boot_time: client.boot_time,
       gpu_name: client.gpu_name,
       ipv4: client.ipv4,
       ipv6: client.ipv6,

@@ -10,7 +10,7 @@ export interface Client {
   arch: string
   cpu_cores: number
   os: string
-  kernel_version: string
+  boot_time: string
   gpu_name?: string
   ipv4?: string
   ipv6?: string

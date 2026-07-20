@@ -185,7 +185,7 @@ const hardwareInfo = computed<InfoItem[]>(() => [
 
 const systemInfo = computed<InfoItem[]>(() => [
   { label: '操作系统', value: data.value?.os ?? '-', icon: 'icon-park-outline:computer' },
-  { label: '内核版本', value: data.value?.kernel_version ?? '-', icon: 'icon-park-outline:code' },
+  { label: '启动时间', value: formatDateTime(data.value?.boot_time), icon: 'icon-park-outline:time' },
   { label: '运行时间', value: formatUptime(data.value?.uptime ?? 0), icon: 'icon-park-outline:timer' },
   { label: '最后上报', value: formatDateTime(data.value?.time), icon: 'icon-park-outline:time' },
 ])
