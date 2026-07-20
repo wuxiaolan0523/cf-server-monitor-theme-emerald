@@ -1,4 +1,5 @@
 import dayjs from 'dayjs'
+import { CURRENCY_SYMBOLS, isSupportedCurrency, normalizeCurrency } from '@/utils/financeHelper'
 
 /** 计费周期类型 */
 export type BillingCycleType = 'monthly' | 'quarterly' | 'semi_annual' | 'annual' | 'biennial' | 'triennial' | 'quinquennial' | 'once' | 'custom'
@@ -116,6 +117,7 @@ const EXPIRE_THRESHOLDS = {
 const TAG_COLOR_SUFFIX_REGEX = /<(\w+)>$/
 const TAG_COLOR_SUFFIX_REMOVE_REGEX = /<\w+>$/
 const TAG_SEPARATOR_REGEX = /[,;]/
+const PRICE_CURRENCY_SYMBOLS: Readonly<Record<string, string>> = CURRENCY_SYMBOLS
 
 /**
  * 解析计费周期类型
@@ -342,7 +344,25 @@ export function formatPrice(price: number, currency: string = '￥', lang: 'zh-C
     return lang === 'zh-CN' ? '免费' : 'Free'
   if (price === -1)
     return lang === 'zh-CN' ? '免费' : 'Free'
-  return `${currency}${price}`
+  const normalizedCurrency = currency.trim().toUpperCase()
+  const symbol = isSupportedCurrency(normalizedCurrency)
+    ? PRICE_CURRENCY_SYMBOLS[normalizedCurrency]
+    : PRICE_CURRENCY_SYMBOLS[normalizeCurrency(currency)] ?? currency
+  return `${symbol}${price}`
+}
+
+function getBillingCycleShortText(billingCycle: number): string {
+  if (billingCycle === -1)
+    return 'once'
+  if (billingCycle >= 360)
+    return 'Y'
+  if (billingCycle >= 175)
+    return '6M'
+  if (billingCycle >= 87)
+    return 'Q'
+  if (billingCycle >= 27)
+    return 'M'
+  return `${billingCycle}D`
 }
 
 /**
@@ -360,8 +380,8 @@ export function formatPriceWithCycle(
   lang: 'zh-CN' | 'en-US' = 'zh-CN',
 ): string {
   const priceText = formatPrice(price, currency, lang)
-  const cycleText = getBillingCycleText(billingCycle, lang)
-  return price > 0 ? `${priceText} / ${cycleText}` : priceText
+  const cycleText = getBillingCycleShortText(billingCycle)
+  return price > 0 ? `${priceText}/${cycleText}` : priceText
 }
 
 /**
