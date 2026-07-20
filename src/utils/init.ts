@@ -145,7 +145,6 @@ class InitManager {
   private sockets: WebSocket[] = []
   private reconnectTimers = new Map<number, ReturnType<typeof setTimeout>>()
   private reconnectAttempts = new Map<number, number>()
-  private refreshTimer: ReturnType<typeof setInterval> | null = null
   private liveUpdateTimer: ReturnType<typeof setInterval> | null = null
   private liveSampleQueues = new Map<string, LiveSample[]>()
   private livePlaybackTimes = new Map<string, number>()
@@ -180,13 +179,12 @@ class InitManager {
 
       this.appStore.publicSettings = await getSharedApi().getPublicSettings()
       this.appStore.updateLoginState(configs.some(item => item.authorization))
-      await this.refreshNodes(true)
+      await this.loadNodes()
       this.connectAllSockets()
       this.liveUpdateTimer = setInterval(() => {
         this.advanceLiveSamples()
         this.flushPendingStatuses()
       }, getDataUpdateIntervalMs(this.appStore.publicSettings))
-      this.refreshTimer = setInterval(() => void this.refreshNodes(false), 60_000)
     }
     catch (error) {
       this.appStore.connectionError = true
@@ -197,22 +195,15 @@ class InitManager {
     }
   }
 
-  private async refreshNodes(initial: boolean): Promise<void> {
+  private async loadNodes(): Promise<void> {
     try {
       const { clients, statuses } = await fetchAllServers()
-      if (initial) {
-        this.nodesStore.initNodes(clients, statuses)
-      }
-      else {
-        this.nodesStore.updateNodeClients(clients)
-        this.queueNodeStatuses(statuses)
-      }
+      this.nodesStore.initNodes(clients, statuses)
       this.appStore.connectionError = false
     }
     catch (error) {
       this.appStore.connectionError = true
-      if (initial)
-        throw error
+      throw error
     }
   }
 
@@ -397,9 +388,6 @@ class InitManager {
     this.sockets = []
     this.reconnectTimers.forEach(timer => clearTimeout(timer))
     this.reconnectTimers.clear()
-    if (this.refreshTimer)
-      clearInterval(this.refreshTimer)
-    this.refreshTimer = null
     if (this.liveUpdateTimer)
       clearInterval(this.liveUpdateTimer)
     this.liveUpdateTimer = null
