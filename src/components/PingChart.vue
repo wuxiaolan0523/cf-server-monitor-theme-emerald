@@ -85,8 +85,8 @@ interface PingRecord {
 interface TaskInfo {
   id: number
   name: string
-  interval: number
-  loss: number
+  interval?: number
+  loss?: number
   p99?: number
   p50?: number
   p99_p50_ratio?: number
@@ -121,12 +121,12 @@ interface PingMetricTaskStats {
   name?: string
   type?: string
   interval?: number
-  loss: number
+  loss?: number
   min?: number
   max?: number
   avg?: number
   latest?: number
-  total: number
+  total?: number
   p50?: number
   p99?: number
   p99_p50_ratio?: number
@@ -231,7 +231,7 @@ async function fetchMetricRecords(uuid: string, hours: number): Promise<PingChar
   const metricTasks = (statsResult?.stats ?? []).map(task => ({
     id: Number(task.task_id),
     name: task.name || `Ping ${task.task_id}`,
-    interval: task.interval ?? 60,
+    interval: task.interval,
     loss: task.loss,
     p99: task.p99,
     p50: task.p50,
@@ -244,7 +244,12 @@ async function fetchMetricRecords(uuid: string, hours: number): Promise<PingChar
     type: task.type,
   })).filter(task => Number.isInteger(task.id))
 
-  return { records, tasks: metricTasks }
+  const fallbackTasks = Array.from(new Set(records.map(record => record.task_id)), taskId => ({
+    id: taskId,
+    name: `Ping ${taskId}`,
+  }))
+
+  return { records, tasks: metricTasks.length ? metricTasks : fallbackTasks }
 }
 
 async function fetchLegacyRecords(uuid: string, hours: number): Promise<PingChartData> {
@@ -431,27 +436,72 @@ function getTaskColor(taskId: number): string {
   return chartColors[safeIndex]!
 }
 
-// 最新值统计（从服务端 tasks 获取，保持颜色顺序）
+function finiteMetric(value: unknown): number | undefined {
+  const number = Number(value)
+  return Number.isFinite(number) ? number : undefined
+}
+
+function average(values: number[]): number | undefined {
+  if (!values.length)
+    return undefined
+  return values.reduce((sum, value) => sum + value, 0) / values.length
+}
+
+function percentile(values: number[], ratio: number): number | undefined {
+  if (!values.length)
+    return undefined
+  const sorted = [...values].sort((a, b) => a - b)
+  const index = Math.min(sorted.length - 1, Math.max(0, Math.ceil(sorted.length * ratio) - 1))
+  return sorted[index]
+}
+
+function sampleIntervalSeconds(records: PingRecord[]): number | undefined {
+  const timestamps = [...new Set(records.map(record => dayjs(record.time).valueOf()))]
+    .filter(Number.isFinite)
+    .sort((a, b) => a - b)
+  if (timestamps.length < 2)
+    return undefined
+
+  const deltas = timestamps.slice(1)
+    .map((timestamp, index) => timestamp - timestamps[index]!)
+    .filter(delta => delta > 0)
+    .sort((a, b) => a - b)
+  if (!deltas.length)
+    return undefined
+  const seconds = Math.round(deltas[Math.floor(deltas.length / 2)]! / 1000)
+  return seconds > 0 ? seconds : undefined
+}
+
+// 优先使用当前查询周期内的原始样本，缺少时才回退到接口聚合字段。
 const latestValues = computed(() => {
   if (!tasks.value.length)
     return []
 
-  const latestMap = new Map<number, number | null>()
-  for (const task of tasks.value) {
-    for (let i = remoteData.value.length - 1; i >= 0; i--) {
-      const rec = remoteData.value[i]
-      if (rec && rec.metric !== 'loss' && rec.task_id === task.id && rec.value >= 0) {
-        latestMap.set(task.id, rec.value)
-        break
-      }
-    }
-  }
-
   return tasks.value.map((task, idx) => {
+    const taskRecords = remoteData.value.filter(record => record.task_id === task.id)
+    const latencyRecords = taskRecords.filter(record => record.metric !== 'loss' && record.value >= 0)
+    const latencyValues = latencyRecords.map(record => record.value)
+    const lossValues = taskRecords
+      .map(record => finiteMetric(record.loss))
+      .filter((value): value is number => value !== undefined)
+    const latest = latencyValues.at(-1)
+    const p50 = percentile(latencyValues, 0.5)
+    const p99 = percentile(latencyValues, 0.99)
+
     const safeIdx = Math.max(0, idx % chartColors.length)
     return {
       ...task,
-      latestValue: latestMap.get(task.id) ?? null,
+      min: latencyValues.length ? Math.min(...latencyValues) : finiteMetric(task.min),
+      max: latencyValues.length ? Math.max(...latencyValues) : finiteMetric(task.max),
+      avg: average(latencyValues) ?? finiteMetric(task.avg),
+      latest: latest ?? finiteMetric(task.latest),
+      p50: p50 ?? finiteMetric(task.p50),
+      p99: p99 ?? finiteMetric(task.p99),
+      p99_p50_ratio: p50 && p99 ? p99 / p50 : finiteMetric(task.p99_p50_ratio),
+      interval: sampleIntervalSeconds(latencyRecords) ?? finiteMetric(task.interval),
+      loss: average(lossValues) ?? finiteMetric(task.loss),
+      total: latencyRecords.length || finiteMetric(task.total),
+      latestValue: latest ?? finiteMetric(task.latest) ?? null,
       color: chartColors[safeIdx]!,
     }
   })
@@ -863,8 +913,10 @@ onMounted(() => {
                 <span class="font-medium" title="平均延迟">
                   {{ task.avg !== undefined ? `${Math.round(task.avg)}ms` : '-' }}
                 </span>
-                <span class="opacity-60">·</span>
-                <span title="丢包率">{{ task.loss.toFixed(2) }}%</span>
+                <template v-if="task.loss !== undefined">
+                  <span class="opacity-60">·</span>
+                  <span title="丢包率">{{ task.loss.toFixed(2) }}%</span>
+                </template>
                 <template v-if="task.p99_p50_ratio !== undefined">
                   <span class="opacity-60">·</span>
                   <span title="波动率">{{ task.p99_p50_ratio.toFixed(2) }}</span>
