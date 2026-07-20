@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import type { NodeStatusPing } from '@/utils/rpc'
-import { DataTooltip } from '@/components/ui/data-tooltip'
 
 const props = defineProps<{
   ping?: Record<string, NodeStatusPing>
@@ -41,20 +40,15 @@ function getPingToneClass(latency: number, available: boolean): string {
 </script>
 
 <template>
-  <div class="grid min-w-0 w-full grid-cols-4 gap-x-1 pr-1 text-center">
-    <DataTooltip
-      v-for="provider in PING_PROVIDERS" :key="provider.key" placement="top"
-      :content="getProviderState(provider.key, provider.label).tooltip" class="min-w-0 flex-1"
-    >
-      <span class="flex min-w-0 flex-col gap-0.5">
-        <span class="text-[9px] font-medium text-muted-foreground">{{ provider.label }}</span>
-        <span
-          class="truncate text-[10px] tabular-nums"
-          :class="getProviderState(provider.key, provider.label).toneClass"
-        >
-          {{ getProviderState(provider.key, provider.label).display }}
-        </span>
+  <div class="grid min-w-0 w-full grid-cols-4 gap-x-1 text-center">
+    <span v-for="provider in PING_PROVIDERS" :key="provider.key" class="flex min-w-0 flex-col">
+      <span class="text-[10px] font-medium text-muted-foreground">{{ provider.label }}</span>
+      <span
+        class="truncate text-[11px] tabular-nums"
+        :class="getProviderState(provider.key, provider.label).toneClass"
+      >
+        {{ getProviderState(provider.key, provider.label).display }}
       </span>
-    </DataTooltip>
+    </span>
   </div>
 </template>

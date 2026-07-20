@@ -328,20 +328,18 @@ function openPingDialog() {
             </div>
             <button
               type="button"
-              class="grid grid-cols-4 gap-1 border-t border-dotted border-border/70 pt-2 text-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              class="grid grid-cols-4 gap-1 bg-muted/60 text-center rounded-md p-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               :aria-label="`${props.node.name} 三网和 BGP 实时延迟`" @click.stop="openPingDialog"
             >
-              <DataTooltip
-                v-for="provider in realtimePings" :key="provider.key" placement="top" :content="provider.tooltip"
-                class="min-w-0"
+              <span
+                v-for="provider in realtimePings" :key="provider.key"
+                class="flex min-w-0 flex-col rounded-sm px-1 pt-0.5 transition-colors hover:bg-background"
               >
-                <span class="flex min-w-0 flex-col gap-0.5 rounded-sm px-1 py-0.5 transition-colors hover:bg-muted/60">
-                  <span class="text-[10px] font-medium text-muted-foreground">{{ provider.label }}</span>
-                  <span class="truncate text-xs font-semibold tabular-nums" :class="provider.toneClass">
-                    {{ provider.display }}
-                  </span>
+                <span class="text-[10px] font-medium text-muted-foreground">{{ provider.label }}</span>
+                <span class="truncate text-[11px] tabular-nums" :class="provider.toneClass">
+                  {{ provider.display }}
                 </span>
-              </DataTooltip>
+              </span>
             </button>
           </div>
         </div>
