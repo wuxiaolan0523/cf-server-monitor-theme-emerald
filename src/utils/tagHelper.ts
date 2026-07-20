@@ -216,6 +216,16 @@ export function getExpireTextClass(expiredAt: string | number | undefined): stri
 }
 
 /**
+ * 格式化节点剩余天数，使用原生主题的带符号短格式。
+ */
+export function formatRemainingDays(expiredAt: string | number | undefined): string {
+  const days = getDaysUntilExpired(expiredAt)
+  if (getExpireStatus(expiredAt) === 'long_term')
+    return '长期'
+  return `${days > 0 ? '+' : ''}${days}D`
+}
+
+/**
  * 获取过期状态的显示颜色（Naive UI 颜色类型）
  * @param status 过期状态
  * @returns Naive UI 颜色类型

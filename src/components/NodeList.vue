@@ -13,7 +13,7 @@ import { formatBytesPerSecondWithConfig, formatBytesWithConfig, formatDateTime, 
 import { getOSImage, getOSName } from '@/utils/osImageHelper'
 import { publicAsset } from '@/utils/publicAsset'
 import { getRegionCode, getRegionDisplayName } from '@/utils/regionHelper'
-import { formatPriceWithCycle, getDaysUntilExpired, getExpireStatus, getExpireTextClass, parseTags } from '@/utils/tagHelper'
+import { formatPriceWithCycle, formatRemainingDays, getExpireStatus, getExpireTextClass, parseTags } from '@/utils/tagHelper'
 
 interface ColumnConfig {
   key: string
@@ -203,19 +203,15 @@ function formatOfflineTime(node: NodeData): string {
 function getPriceTags(node: NodeData): PriceTagItem[] {
   const tags: PriceTagItem[] = []
   const lang = appStore.lang
-  const days = getDaysUntilExpired(node.expired_at)
   const status = getExpireStatus(node.expired_at)
+  const remainingDays = formatRemainingDays(node.expired_at)
   const priceText = formatPriceWithCycle(node.price, node.billing_cycle, node.currency, lang)
   if (node.price !== 0)
     tags.push({ text: priceText })
-  if (status === 'expired')
-    tags.push({ text: lang === 'zh-CN' ? '已过期' : 'Expired' })
-  else if (status === 'long_term')
+  if (status === 'long_term')
     tags.push({ text: lang === 'zh-CN' ? '长期' : 'Long-term' })
-  else if (lang === 'zh-CN')
-    tags.push({ text: `余 ${days} 天`, prefix: '余 ', highlightValue: String(days), suffix: ' 天' })
   else
-    tags.push({ text: `${days} days left`, highlightValue: String(days), suffix: ' days left' })
+    tags.push({ text: remainingDays, highlightValue: remainingDays })
   return tags
 }
 
