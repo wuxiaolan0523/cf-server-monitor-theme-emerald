@@ -2,5 +2,8 @@ name = "cf-server-monitor-theme-emerald"
 compatibility_date = "2025-01-01"
 pages_build_output_dir = "dist"
 
+[vars]
+PROXY_BACKEND = "false"
+
 [build]
 command = "bun run build:cloudflare"
