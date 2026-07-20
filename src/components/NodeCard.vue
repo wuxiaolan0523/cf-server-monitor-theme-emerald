@@ -333,7 +333,7 @@ function openPingDialog() {
             >
               <span
                 v-for="provider in realtimePings" :key="provider.key"
-                class="flex min-w-0 flex-col rounded-sm px-1 pt-0.5 transition-colors hover:bg-background"
+                class="flex min-w-0 flex-col rounded-sm p-1 pb-0.5 transition-colors hover:bg-background"
               >
                 <span class="text-[10px] font-medium text-muted-foreground">{{ provider.label }}</span>
                 <span class="truncate text-[11px] tabular-nums" :class="provider.toneClass">

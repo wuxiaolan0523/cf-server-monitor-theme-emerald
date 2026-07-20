@@ -222,7 +222,7 @@ export function formatRemainingDays(expiredAt: string | number | undefined): str
   const days = getDaysUntilExpired(expiredAt)
   if (getExpireStatus(expiredAt) === 'long_term')
     return '长期'
-  return `${days > 0 ? '+' : ''}${days}D`
+  return `${days > 0 ? '+' : ''}${days} 天`
 }
 
 /**
