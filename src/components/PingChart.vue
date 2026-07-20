@@ -10,6 +10,7 @@ import { Spinner } from '@/components/ui/spinner'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useBackgroundSurface } from '@/composables/useBackgroundSurface'
 import { useAppStore } from '@/stores/app'
+import { DEFAULT_CHART_TIME_RANGE, getAvailableChartTimeRanges } from '@/utils/chartTimeRange'
 import { cutPeakValues, interpolateNullsLinear } from '@/utils/recordHelper'
 import { getSharedRpc, RpcError } from '@/utils/rpc'
 import '@/utils/echarts' // 共享 ECharts 配置
@@ -51,55 +52,20 @@ const chartColors = [
 // 从 publicSettings 获取记录保留时间
 const maxPingRecordPreserveTime = computed(() => appStore.publicSettings?.ping_record_preserve_time || 168)
 
-// 视图选项
-const presetViews = [
-  { label: '1 小时', hours: 1 },
-  { label: '6 小时', hours: 6 },
-  { label: '12 小时', hours: 12 },
-  { label: '1 天', hours: 24 },
-]
-
 // 可用视图列表
-const availableViews = computed(() => {
-  const views: { label: string, hours: number }[] = []
-  const maxHours = maxPingRecordPreserveTime.value
-
-  for (const v of presetViews) {
-    if (maxHours >= v.hours) {
-      views.push(v)
-    }
-  }
-
-  const maxPreset = presetViews.at(-1)
-  if (maxPreset && maxHours > maxPreset.hours) {
-    const label = maxHours % 24 === 0
-      ? `${Math.floor(maxHours / 24)} 天`
-      : `${maxHours} 小时`
-    views.push({ label, hours: maxHours })
-  }
-  else if (maxHours > 1 && !presetViews.some(v => v.hours === maxHours)) {
-    const label = maxHours % 24 === 0
-      ? `${Math.floor(maxHours / 24)} 天`
-      : `${maxHours} 小时`
-    views.push({ label, hours: maxHours })
-  }
-
-  return views
-})
+const availableViews = computed(() => getAvailableChartTimeRanges(maxPingRecordPreserveTime.value))
 
 // 当前选中的视图
-const selectedView = ref<string>('')
+const selectedView = ref<string>('10M')
 const selectedHours = computed(() => {
   const view = availableViews.value.find(v => v.label === selectedView.value)
-  return view?.hours || 1
+  return view?.hours ?? DEFAULT_CHART_TIME_RANGE.hours
 })
 
 // 初始化默认视图
 watch(availableViews, (views) => {
-  const firstView = views[0]
-  if (firstView && !selectedView.value) {
-    selectedView.value = firstView.label
-  }
+  if (!views.some(view => view.label === selectedView.value))
+    selectedView.value = views[0]?.label ?? DEFAULT_CHART_TIME_RANGE.label
 }, { immediate: true })
 
 // ==================== 类型定义 ====================
@@ -723,10 +689,6 @@ watch(() => props.uuid, () => {
 })
 
 onMounted(() => {
-  const firstView = availableViews.value[0]
-  if (firstView && !selectedView.value) {
-    selectedView.value = firstView.label
-  }
   fetchRecords()
 })
 </script>

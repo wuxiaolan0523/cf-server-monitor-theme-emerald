@@ -14,6 +14,7 @@ import { useBackgroundSurface } from '@/composables/useBackgroundSurface'
 import { useAppStore } from '@/stores/app'
 import { useNodesStore } from '@/stores/nodes'
 import { getDataUpdateIntervalMs } from '@/utils/api'
+import { DEFAULT_CHART_TIME_RANGE, getAvailableChartTimeRanges } from '@/utils/chartTimeRange'
 import { formatBytes, formatBytesSplit } from '@/utils/helper'
 import { fillMissingTimePoints } from '@/utils/recordHelper'
 import { getSharedRpc } from '@/utils/rpc'
@@ -99,49 +100,21 @@ const baseTooltipConfig = computed(() => ({
 const chartMargin = { top: 30, right: 24, bottom: 32, left: 56 }
 const chartMarginWithLegend = { top: 30, right: 24, bottom: 52, left: 56 }
 
-// 视图选项
-const presetViews = [
-  { label: '4 小时', hours: 4 },
-  { label: '1 天', hours: 24 },
-  { label: '7 天', hours: 168 },
-  { label: '30 天', hours: 720 },
-]
-
 // 可用视图列表
-const availableViews = computed(() => {
-  const views: { label: string, hours?: number }[] = [{ label: '实时' }]
-  const maxHours = maxRecordPreserveTime.value
-
-  for (const v of presetViews) {
-    if (maxHours >= v.hours) {
-      views.push({ label: v.label, hours: v.hours })
-    }
-  }
-
-  const maxPreset = presetViews.at(-1)
-  if (maxPreset && maxHours > maxPreset.hours) {
-    const label = maxHours % 24 === 0
-      ? `${Math.floor(maxHours / 24)} 天`
-      : `${maxHours} 小时`
-    views.push({ label, hours: maxHours })
-  }
-  else if (maxHours > 4 && !presetViews.some(v => v.hours === maxHours)) {
-    const label = maxHours % 24 === 0
-      ? `${Math.floor(maxHours / 24)} 天`
-      : `${maxHours} 小时`
-    views.push({ label, hours: maxHours })
-  }
-
-  return views
-})
+const availableViews = computed(() => getAvailableChartTimeRanges(maxRecordPreserveTime.value))
 
 // 当前选中的视图
-const selectedView = ref<string>('实时')
+const selectedView = ref<string>('10M')
 const selectedHours = computed(() => {
   const view = availableViews.value.find(v => v.label === selectedView.value)
-  return view?.hours
+  return view?.hours ?? DEFAULT_CHART_TIME_RANGE.hours
 })
-const isRealtime = computed(() => selectedView.value === '实时')
+const isRealtime = computed(() => selectedView.value === DEFAULT_CHART_TIME_RANGE.label)
+
+watch(availableViews, (views) => {
+  if (!views.some(view => view.label === selectedView.value))
+    selectedView.value = views[0]?.label ?? DEFAULT_CHART_TIME_RANGE.label
+}, { immediate: true })
 
 // 数据状态
 const remoteData = shallowRef<StatusRecord[]>([])
