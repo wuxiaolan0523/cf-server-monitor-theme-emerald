@@ -1,0 +1,20 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": "vite",
+  "buildCommand": "bun run build:vercel",
+  "outputDirectory": "dist",
+  "rewrites": [
+    {
+      "source": "/api/:path*",
+      "destination": "/api/proxy?path=/api/:path*"
+    },
+    {
+      "source": "/flags/:path*",
+      "destination": "/api/proxy?path=/flags/:path*"
+    },
+    {
+      "source": "/os-icons/:path*",
+      "destination": "/api/proxy?path=/os-icons/:path*"
+    }
+  ]
+}

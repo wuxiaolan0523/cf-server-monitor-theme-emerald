@@ -14,6 +14,8 @@
     "dev": "vite",
     "build": "run-p type-check \"build-only {@}\" --",
     "build:github-page": "vite build",
+    "build:vercel": "vite build --mode vercel",
+    "build:cloudflare": "vite build --mode cloudflare",
     "preview": "vite preview",
     "build-only": "vite build",
     "type-check": "vue-tsc --build",

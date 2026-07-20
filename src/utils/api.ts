@@ -191,7 +191,18 @@ function normalizeBase(value: string): string {
   return value.trim().replace(TRAILING_SLASHES_REGEX, '')
 }
 
+export function isProxyBackendEnabled(): boolean {
+  return getMetaContent('proxyBackend').toLowerCase() === 'true'
+}
+
+export function isProxyWebSocketEnabled(): boolean {
+  return getMetaContent('proxyWebSocket').toLowerCase() !== 'false'
+}
+
 export function getApiBases(): string[] {
+  if (isProxyBackendEnabled())
+    return ['']
+
   const configured = getMetaContent('apiBase')
   const bases = configured.split(',').map(normalizeBase).filter(Boolean)
   if (bases.length)

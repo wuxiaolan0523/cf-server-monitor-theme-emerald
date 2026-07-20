@@ -12,6 +12,8 @@ const LESS_THAN_REGEX = /</g
 const GREATER_THAN_REGEX = />/g
 const TITLE_TAG_REGEX = /<title>.*<\/title>/
 const API_BASE_META_REGEX = /<meta name="apiBase" content="[^"]*"\s*\/?>/
+const PROXY_BACKEND_META_REGEX = /<meta name="proxyBackend" content="[^"]*"\s*\/?>/
+const PROXY_WEBSOCKET_META_REGEX = /<meta name="proxyWebSocket" content="[^"]*"\s*\/?>/
 
 function getCommitHash(): string {
   try {
@@ -52,6 +54,8 @@ function normalizeOrigin(value: string): string | null {
 export default defineConfig(({ mode, command }) => {
   const env = loadEnv(mode, process.cwd(), '')
   const apiBases = splitList(env.API_BASE).map(normalizeOrigin).filter((value): value is string => Boolean(value))
+  const proxyBackend = env.PROXY_BACKEND?.toLowerCase() === 'true'
+  const proxyWebSocket = env.PROXY_WEBSOCKET?.toLowerCase() !== 'false'
   const cspApi = splitList(env.CSP_API).map(normalizeOrigin).filter((value): value is string => Boolean(value))
   const cspStatic = splitList(env.CSP_STATIC).map(normalizeOrigin).filter((value): value is string => Boolean(value))
   const outboundProxy = env.HTTPS_PROXY || env.HTTP_PROXY
@@ -93,10 +97,20 @@ export default defineConfig(({ mode, command }) => {
           let result = html
           if (env.TITLE)
             result = result.replace(TITLE_TAG_REGEX, `<title>${escapeHtml(env.TITLE)}</title>`)
-          if (command === 'build' && apiBases.length) {
+          if (command === 'build' && !proxyBackend && apiBases.length) {
             result = result.replace(
               API_BASE_META_REGEX,
               `<meta name="apiBase" content="${escapeHtml(apiBases.join(','))}" />`,
+            )
+          }
+          if (command === 'build') {
+            result = result.replace(
+              PROXY_BACKEND_META_REGEX,
+              `<meta name="proxyBackend" content="${proxyBackend ? 'true' : 'false'}" />`,
+            )
+            result = result.replace(
+              PROXY_WEBSOCKET_META_REGEX,
+              `<meta name="proxyWebSocket" content="${proxyWebSocket ? 'true' : 'false'}" />`,
             )
           }
           if (env.BACKGROUND_IMAGE) {
