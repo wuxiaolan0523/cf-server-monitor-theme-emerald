@@ -9,9 +9,9 @@ import { DataTooltip } from '@/components/ui/data-tooltip'
 import { ProgressThin } from '@/components/ui/progress-thin'
 import { useBackgroundSurface } from '@/composables/useBackgroundSurface'
 import { useAppStore } from '@/stores/app'
+import { getApiAssetUrl } from '@/utils/api'
 import { formatBytesPerSecondWithConfig, formatBytesWithConfig, formatDateTime, formatUptimeWithFormat, getStatus } from '@/utils/helper'
 import { getOSImage, getOSName } from '@/utils/osImageHelper'
-import { publicAsset } from '@/utils/publicAsset'
 import { getRegionCode, getRegionDisplayName } from '@/utils/regionHelper'
 import { formatPriceWithCycle, formatRemainingDays, getExpireStatus, getExpireTextClass, parseTags } from '@/utils/tagHelper'
 
@@ -130,8 +130,8 @@ const offlineOverlayContentStyle = computed(() => {
   return { gridColumn: `${startColumn} / -1` }
 })
 
-function getFlagSrc(region: string): string {
-  return publicAsset(`images/flags/${getRegionCode(region)}.svg`)
+function getFlagSrc(region: string, apiIndex?: number): string {
+  return getApiAssetUrl(`flags/${getRegionCode(region).toLowerCase()}.svg`, apiIndex)
 }
 
 function hasRegion(region: string | null | undefined): boolean {
@@ -275,7 +275,7 @@ function getCustomTags(node: NodeData): Array<string> {
               <div v-else-if="col.key === 'name'" class="space-y-0.5" :class="[!node.online && 'blur-sm opacity-30']">
                 <div class="flex gap-1 items-center text-xs font-semibold">
                   <img
-                    v-if="hasRegion(node.region)" :src="getFlagSrc(node.region)"
+                    v-if="hasRegion(node.region)" :src="getFlagSrc(node.region, node.source_index)"
                     :alt="getRegionDisplayName(node.region)" class="size-5 rounded-sm"
                   >
                   <span class="truncate">{{ node.name }}</span>
@@ -325,7 +325,7 @@ function getCustomTags(node: NodeData): Array<string> {
 
               <!-- 操作系统 -->
               <div v-else-if="col.key === 'os'" class="flex justify-center">
-                <img :src="getOSImage(node.os)" :alt="getOSName(node.os)" class="size-4">
+                <img :src="getOSImage(node.os, node.source_index)" :alt="getOSName(node.os)" class="size-4">
               </div>
 
               <!-- CPU -->

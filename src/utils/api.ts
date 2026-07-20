@@ -2,6 +2,7 @@ import type { Client, NodeStatus, NodeStatusPing, PingRecord, StatusRecord } fro
 
 const ONLINE_THRESHOLD_MS = 5 * 60 * 1000
 const MB = 1024 * 1024
+const LEADING_SLASHES_REGEX = /^\/+/
 const TRAILING_SLASHES_REGEX = /\/+$/
 const NON_PRICE_CHARACTERS_REGEX = /[^\d.-]/g
 const YEAR_SUFFIX_REGEX = /\/y(?:ear)?$/i
@@ -196,6 +197,13 @@ export function getApiBases(): string[] {
   if (bases.length)
     return [...new Set(bases)]
   return [typeof window === 'undefined' ? '' : window.location.origin]
+}
+
+export function getApiAssetUrl(path: string, apiIndex = 0): string {
+  const bases = getApiBases()
+  const base = bases[apiIndex] ?? bases[0] ?? ''
+  const cleanPath = path.replace(LEADING_SLASHES_REGEX, '')
+  return base ? `${normalizeBase(base)}/${cleanPath}` : `/${cleanPath}`
 }
 
 export function hasMultipleApiBases(): boolean {

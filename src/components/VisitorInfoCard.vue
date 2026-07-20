@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { Icon } from '@iconify/vue'
 import { computed, onMounted, ref } from 'vue'
-import { publicAsset } from '@/utils/publicAsset'
+import { getApiAssetUrl } from '@/utils/api'
 
 interface VisitorGeoData {
   ip: string
@@ -48,7 +48,7 @@ const flagVisible = ref(true)
 const expand = ref(false)
 
 const subtitle = computed(() => loading.value ? '检测中' : location.value || '网络访客')
-const flagSrc = computed(() => countryCode.value ? publicAsset(`images/flags/${countryCode.value}.svg`) : '')
+const flagSrc = computed(() => countryCode.value ? getApiAssetUrl(`flags/${countryCode.value.toLowerCase()}.svg`) : '')
 const displayIp = computed(() => expand.value ? ip.value : maskIpForCollapsedState(ip.value))
 
 const visitorRows = computed<VisitorInfoRow[]>(() => [

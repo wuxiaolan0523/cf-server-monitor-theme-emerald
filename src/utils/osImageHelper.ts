@@ -2,7 +2,7 @@
  * OS Image Helper - 根据字符串匹配返回操作系统图像路径
  */
 
-import { publicAsset } from '@/utils/publicAsset'
+import { getApiAssetUrl } from '@/utils/api'
 
 // 操作系统匹配配置
 interface OSConfig {
@@ -17,170 +17,135 @@ const OS_NAME_SPLIT_REGEX = /[\s/]+/
 const osConfigs: OSConfig[] = [
   {
     name: 'AlmaLinux',
-    image: '/images/logo/os-alma.svg',
+    image: 'os-icons/os-alma.svg',
     keywords: ['alma', 'almalinux'],
   },
   {
     name: 'Alpine Linux',
-    image: '/images/logo/os-alpine.webp',
+    image: 'os-icons/os-alpine.webp',
     keywords: ['alpine', 'alpine linux'],
   },
   {
     name: 'Armbian',
-    image: '/images/logo/os-armbian.svg',
-    keywords: ['armbian'],
+    image: 'os-icons/os-armbian.png',
+    keywords: ['armbox', 'armbian'],
   },
   {
     name: 'CentOS',
-    image: '/images/logo/os-centos.svg',
+    image: 'os-icons/os-centos.svg',
     keywords: ['centos', 'cent os'],
   },
   {
     name: 'Debian',
-    image: '/images/logo/os-debian.svg',
-    keywords: ['debian', 'deb'],
-  },
-  {
-    name: 'FreeBSD',
-    image: '/images/logo/os-freebsd.svg',
-    keywords: ['freebsd', 'bsd'],
+    image: 'os-icons/os-debian.svg',
+    keywords: ['debian', 'debian gnu/linux', 'deb'],
   },
   {
     name: 'Ubuntu',
-    image: '/images/logo/os-ubuntu.svg',
+    image: 'os-icons/os-ubuntu.svg',
     keywords: ['ubuntu', 'elementary'],
   },
   {
     name: 'Windows',
-    image: '/images/logo/os-windows.svg',
-    keywords: ['windows', 'win', 'microsoft', 'ms'],
+    image: 'os-icons/os-windows.svg',
+    keywords: ['windows', 'win32', 'win64', 'win10', 'win11', 'win server', 'microsoft'],
   },
   {
     name: 'Arch Linux',
-    image: '/images/logo/os-arch.svg',
+    image: 'os-icons/os-arch.svg',
     keywords: ['arch', 'archlinux', 'arch linux'],
   },
   {
     name: 'Kali Linux',
-    image: '/images/logo/os-kail.svg',
+    image: 'os-icons/os-kail.svg',
     keywords: ['kail', 'kali', 'kali linux'],
   },
   {
     name: 'iStoreOS',
-    image: '/images/logo/os-istore.png',
+    image: 'os-icons/os-istore.png',
     keywords: ['istore', 'istoreos', 'istore os'],
   },
   {
     name: 'OpenWrt',
-    image: '/images/logo/os-openwrt.svg',
-    keywords: ['openwrt', 'open wrt', 'open-wrt', 'qwrt'],
+    image: 'os-icons/os-openwrt.svg',
+    keywords: ['openwrt', 'open wrt', 'open-wrt', 'qwrt', 'kwrt'],
   },
   {
     name: 'ImmortalWrt',
-    image: '/images/logo/os-openwrt.svg',
+    image: 'os-icons/os-openwrt.svg',
     keywords: ['immortalwrt', 'immortal', 'emmortal'],
   },
   {
     name: 'NixOS',
-    image: '/images/logo/os-nix.svg',
+    image: 'os-icons/os-nix.svg',
     keywords: ['nixos', 'nix os', 'nix'],
   },
   {
     name: 'Rocky Linux',
-    image: '/images/logo/os-rocky.svg',
+    image: 'os-icons/os-rocky.svg',
     keywords: ['rocky', 'rocky linux'],
   },
   {
     name: 'Fedora',
-    image: '/images/logo/os-fedora.svg',
+    image: 'os-icons/os-fedora.svg',
     keywords: ['fedora'],
   },
   {
     name: 'openSUSE',
-    image: '/images/logo/os-openSUSE.svg',
+    image: 'os-icons/os-openSUSE.svg',
     keywords: ['opensuse', 'suse'],
   },
   {
     name: 'Gentoo',
-    image: '/images/logo/os-gentoo.svg',
+    image: 'os-icons/os-gentoo.svg',
     keywords: ['gentoo'],
   },
   {
     name: 'Red Hat',
-    image: '/images/logo/os-redhat.svg',
+    image: 'os-icons/os-redhat.svg',
     keywords: ['redhat', 'rhel', 'red hat'],
   },
   {
     name: 'Linux Mint',
-    image: '/images/logo/os-mint.svg',
+    image: 'os-icons/os-mint.svg',
     keywords: ['mint', 'linux mint'],
   },
   {
     name: 'Manjaro',
-    image: '/images/logo/os-manjaro-.svg',
+    image: 'os-icons/os-manjaro-.svg',
     keywords: ['manjaro'],
   },
   {
     name: 'Synology DSM',
-    image: '/images/logo/os-synology.ico',
+    image: 'os-icons/os-synology.ico',
     keywords: ['synology', 'dsm', 'synology dsm'],
   },
   {
-    name: 'fnOS',
-    image: '/images/logo/os-fnos.ico',
-    keywords: ['fnos', 'fnnas'],
-  },
-  {
     name: 'Proxmox VE',
-    image: '/images/logo/os-proxmox.ico',
-    keywords: ['proxmox', 'proxmox ve'],
+    image: 'os-icons/os-proxmox.ico',
+    keywords: ['proxmox', 'proxmox ve', 'pve'],
   },
   {
     name: 'macOS',
-    image: '/images/logo/os-macos.svg',
-    keywords: ['macos'],
+    image: 'os-icons/os-macos.svg',
+    keywords: ['macos', 'mac os', 'darwin', 'os x'],
   },
   {
-    name: 'QTS',
-    image: '/images/logo/os-qnap.svg',
-    keywords: ['qts', 'quts hero', 'qes', 'qutscloud'],
-  },
-  {
-    name: 'Astra Linux',
-    image: '/images/logo/os-astar.png',
-    keywords: ['astra', 'astra linux'],
-  },
-  {
-    name: 'Orange Pi',
-    image: '/images/logo/os-orange-pi.svg',
-    keywords: ['orange pi', 'orangepi'],
-  },
-  {
-    name: 'Huawei',
-    image: '/images/logo/os-huawei.svg',
-    keywords: ['huawei', 'euleros', 'euler os'],
-  },
-  {
-    name: 'Aliyun',
-    image: '/images/logo/alibabacloud-color.svg',
-    keywords: ['aliyun', 'alibaba'],
+    name: 'Alibaba Cloud Linux',
+    image: 'os-icons/os-alibaba.svg',
+    keywords: ['alibaba', 'aliyun', 'alinux', 'anolis', 'openanolis', '阿里', '龙蜥'],
   },
   {
     name: 'OpenCloudOS',
-    image: '/images/logo/os-OpenCloudOS.png',
-    keywords: ['opencloud'],
-  },
-  {
-    name: 'Unraid',
-    image: '/images/logo/os-unraid.svg',
-    keywords: ['unraid'],
+    image: 'os-icons/os-opencloud.svg',
+    keywords: ['opencloud', 'opencloudos', 'opencloud os'],
   },
 ]
 
 // 默认配置
 const defaultOSConfig: OSConfig = {
   name: 'Unknown',
-  image: '/images/logo/linux.svg',
+  image: 'os-icons/os-unknown.svg',
   keywords: ['unknown'],
 }
 
@@ -214,24 +179,24 @@ function findOSConfig(osString: string): OSConfig {
  * @param osString - 操作系统相关的字符串
  * @returns 匹配的操作系统图像路径，如果没有匹配则返回默认图像
  */
-export function getOSImage(osString: string): string {
-  return publicAsset(findOSConfig(osString).image)
+export function getOSImage(osString: string, apiIndex = 0): string {
+  return getApiAssetUrl(findOSConfig(osString).image, apiIndex)
 }
 
 /**
  * 获取所有可用的操作系统图像
  * @returns 所有操作系统图像的映射表
  */
-export function getAllOSImages(): Record<string, string> {
+export function getAllOSImages(apiIndex = 0): Record<string, string> {
   const imageMap: Record<string, string> = {}
 
   osConfigs.forEach((config) => {
     const key = config.keywords[0] // 使用第一个关键词作为键
     if (key)
-      imageMap[key] = config.image
+      imageMap[key] = getApiAssetUrl(config.image, apiIndex)
   })
 
-  imageMap.unknown = defaultOSConfig.image
+  imageMap.unknown = getApiAssetUrl(defaultOSConfig.image, apiIndex)
 
   return imageMap
 }

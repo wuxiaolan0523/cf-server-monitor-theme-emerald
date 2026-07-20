@@ -8,9 +8,9 @@ import { DataTooltip } from '@/components/ui/data-tooltip'
 import { ProgressThin } from '@/components/ui/progress-thin'
 import { useBackgroundSurface } from '@/composables/useBackgroundSurface'
 import { useAppStore } from '@/stores/app'
+import { getApiAssetUrl } from '@/utils/api'
 import { formatBytesPerSecondWithConfig, formatBytesWithConfig, formatDateTime, formatUptimeWithFormat, getStatus } from '@/utils/helper'
 import { getOSImage, getOSName } from '@/utils/osImageHelper'
-import { publicAsset } from '@/utils/publicAsset'
 import { getRegionCode, getRegionDisplayName } from '@/utils/regionHelper'
 import { formatPriceWithCycle, formatRemainingDays, getExpireStatus, getExpireTextClass, parseTags } from '@/utils/tagHelper'
 
@@ -173,10 +173,10 @@ function openPingDialog() {
 
     <template #header-extra>
       <div class="flex gap-2 items-center">
-        <img :src="getOSImage(props.node.os)" :alt="getOSName(props.node.os)" class="size-4">
+        <img :src="getOSImage(props.node.os, props.node.source_index)" :alt="getOSName(props.node.os)" class="size-4">
         <img
-          v-if="hasRegion(props.node.region)" :src="publicAsset(`images/flags/${getRegionCode(props.node.region)}.svg`)"
-          :alt="getRegionDisplayName(props.node.region)" class="size-5 shrink-0"
+          v-if="hasRegion(props.node.region)" :src="getApiAssetUrl(`flags/${getRegionCode(props.node.region).toLowerCase()}.svg`, props.node.source_index)"
+          :alt="getRegionDisplayName(props.node.region)" class="size-5 shrink-0 rounded-sm"
         >
       </div>
     </template>
