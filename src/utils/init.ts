@@ -8,6 +8,7 @@ import {
   fetchAllServers,
   fetchSiteConfigs,
   getApiBases,
+  getDataUpdateIntervalMs,
   getDisplayUuid,
   getRegisteredServerIds,
   getSharedApi,
@@ -28,10 +29,34 @@ interface TurnstileApi {
 
 interface WsMessage {
   type: string
+  ts?: number | string
   updates?: Array<{
     serverId: string
-    samples?: Array<{ ts?: number, data?: Record<string, unknown> }>
+    samples?: Array<{
+      ts?: number | string
+      timestamp?: number | string
+      data?: Record<string, unknown>
+      payload?: Record<string, unknown>
+      metrics?: Record<string, unknown>
+    }>
   }>
+}
+
+interface LiveSample {
+  serverId: string
+  ts: number
+  data: Record<string, unknown>
+}
+
+function normalizeSampleTimestamp(value: unknown, fallback = Date.now()): number {
+  const number = Number(value)
+  if (!Number.isFinite(number) || number <= 0)
+    return fallback
+  return number < 1e12 ? number * 1000 : number
+}
+
+function sampleHasField(data: Record<string, unknown>, ...keys: string[]): boolean {
+  return keys.some(key => data[key] !== undefined && data[key] !== null && data[key] !== '')
 }
 
 const TURNSTILE_SCRIPT = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit'
@@ -121,6 +146,10 @@ class InitManager {
   private reconnectTimers = new Map<number, ReturnType<typeof setTimeout>>()
   private reconnectAttempts = new Map<number, number>()
   private refreshTimer: ReturnType<typeof setInterval> | null = null
+  private liveUpdateTimer: ReturnType<typeof setInterval> | null = null
+  private liveSampleQueues = new Map<string, LiveSample[]>()
+  private livePlaybackTimes = new Map<string, number>()
+  private pendingStatuses = new Map<string, NodeStatus>()
   private destroyed = false
 
   async init(): Promise<void> {
@@ -153,6 +182,10 @@ class InitManager {
       this.appStore.updateLoginState(configs.some(item => item.authorization))
       await this.refreshNodes(true)
       this.connectAllSockets()
+      this.liveUpdateTimer = setInterval(() => {
+        this.advanceLiveSamples()
+        this.flushPendingStatuses()
+      }, getDataUpdateIntervalMs(this.appStore.publicSettings))
       this.refreshTimer = setInterval(() => void this.refreshNodes(false), 60_000)
     }
     catch (error) {
@@ -172,7 +205,7 @@ class InitManager {
       }
       else {
         this.nodesStore.updateNodeClients(clients)
-        this.nodesStore.updateNodeStatuses(statuses)
+        this.queueNodeStatuses(statuses)
       }
       this.appStore.connectionError = false
     }
@@ -185,6 +218,99 @@ class InitManager {
 
   private connectAllSockets(): void {
     getApiBases().forEach((baseUrl, apiIndex) => this.connectSocket(baseUrl, apiIndex))
+  }
+
+  private applyLiveSample(apiIndex: number, sample: LiveSample): void {
+    const uuid = getDisplayUuid(apiIndex, sample.serverId)
+    const currentNode = this.nodesStore.nodesByUuid.get(uuid)
+    const current = this.pendingStatuses.get(uuid) ?? currentNode
+    const status = adaptServer({
+      id: sample.serverId,
+      ...sample.data,
+      last_updated: sample.ts,
+    }, apiIndex).status
+
+    if (current) {
+      if (!sampleHasField(sample.data, 'net_tx', 'net_total_up'))
+        status.net_total_up = current.net_total_up
+      if (!sampleHasField(sample.data, 'net_rx', 'net_total_down'))
+        status.net_total_down = current.net_total_down
+      if (!sampleHasField(sample.data, 'net_tx_monthly'))
+        status.net_monthly_up = current.net_monthly_up
+      if (!sampleHasField(sample.data, 'net_rx_monthly'))
+        status.net_monthly_down = current.net_monthly_down
+      if (!sampleHasField(sample.data, 'boot_time'))
+        status.uptime = current.uptime + 1
+      if (!sampleHasField(sample.data, 'ram_total'))
+        status.ram_total = currentNode?.mem_total ?? status.ram_total
+      if (!sampleHasField(sample.data, 'swap_total'))
+        status.swap_total = current.swap_total
+      if (!sampleHasField(sample.data, 'disk_total'))
+        status.disk_total = current.disk_total
+    }
+
+    this.queueNodeStatuses({ [uuid]: status })
+  }
+
+  private queueNodeStatuses(statuses: Record<string, NodeStatus>): void {
+    Object.entries(statuses).forEach(([uuid, status]) => {
+      this.pendingStatuses.set(uuid, status)
+    })
+  }
+
+  private flushPendingStatuses(): void {
+    if (!this.pendingStatuses.size)
+      return
+    const statuses = Object.fromEntries(this.pendingStatuses)
+    this.pendingStatuses.clear()
+    this.nodesStore.updateNodeStatuses(statuses)
+  }
+
+  private enqueueLiveSamples(apiIndex: number, serverId: string, samples: LiveSample[]): void {
+    const uuid = getDisplayUuid(apiIndex, serverId)
+    const current = this.pendingStatuses.get(uuid) ?? this.nodesStore.nodesByUuid.get(uuid)
+    const currentTime = current?.time ? new Date(current.time).getTime() : 0
+    const unique = new Map<number, LiveSample>()
+
+    for (const sample of samples) {
+      if (sample.ts > currentTime)
+        unique.set(sample.ts, sample)
+    }
+
+    const incoming = [...unique.values()].sort((a, b) => a.ts - b.ts)
+    if (!incoming.length)
+      return
+
+    if (incoming.length === 1) {
+      this.liveSampleQueues.delete(uuid)
+      this.livePlaybackTimes.set(uuid, incoming[0]!.ts)
+      this.applyLiveSample(apiIndex, incoming[0]!)
+      return
+    }
+
+    this.liveSampleQueues.set(uuid, incoming.slice(-600))
+    this.livePlaybackTimes.set(uuid, incoming[0]!.ts)
+    this.applyLiveSample(apiIndex, incoming[0]!)
+    this.liveSampleQueues.get(uuid)?.shift()
+  }
+
+  private advanceLiveSamples(): void {
+    for (const [uuid, queue] of this.liveSampleQueues) {
+      const source = this.nodesStore.nodesByUuid.get(uuid)
+      const apiIndex = source?.source_index ?? 0
+      const playbackTime = (this.livePlaybackTimes.get(uuid) ?? Date.now()) + 1000
+      let selected: LiveSample | undefined
+
+      while (queue.length && queue[0]!.ts <= playbackTime)
+        selected = queue.shift()
+
+      if (selected)
+        this.applyLiveSample(apiIndex, selected)
+
+      this.livePlaybackTimes.set(uuid, selected?.ts ?? playbackTime)
+      if (!queue.length)
+        this.liveSampleQueues.delete(uuid)
+    }
   }
 
   private connectSocket(baseUrl: string, apiIndex: number): void {
@@ -217,35 +343,21 @@ class InitManager {
       if (message.type !== 'batchUpdate')
         return
 
-      const statuses: Record<string, NodeStatus> = {}
       for (const update of message.updates ?? []) {
-        const sample = update.samples?.at(-1)
-        if (!sample?.data)
-          continue
-        const uuid = getDisplayUuid(apiIndex, update.serverId)
-        const current = this.nodesStore.nodesByUuid.get(uuid)
-        const status = adaptServer({
-          id: update.serverId,
-          ...sample.data,
-          last_updated: sample.ts ?? Date.now(),
-        }, apiIndex).status
-        if (current) {
-          if (sample.data.net_tx_monthly === undefined && sample.data.net_tx === undefined)
-            status.net_total_up = current.net_total_up
-          if (sample.data.net_rx_monthly === undefined && sample.data.net_rx === undefined)
-            status.net_total_down = current.net_total_down
-          if (sample.data.boot_time === undefined)
-            status.uptime = current.uptime + 1
-          if (sample.data.ram_total === undefined)
-            status.ram_total = current.mem_total
-          if (sample.data.swap_total === undefined)
-            status.swap_total = current.swap_total
-          if (sample.data.disk_total === undefined)
-            status.disk_total = current.disk_total
-        }
-        statuses[uuid] = status
+        const samples = (update.samples ?? []).flatMap((sample) => {
+          const data = sample.data ?? sample.payload ?? sample.metrics
+          if (!data)
+            return []
+          return [{
+            serverId: update.serverId,
+            ts: normalizeSampleTimestamp(
+              sample.ts ?? sample.timestamp ?? data.sample_timestamp ?? data.last_updated ?? data.timestamp ?? message.ts,
+            ),
+            data,
+          }]
+        })
+        this.enqueueLiveSamples(apiIndex, update.serverId, samples)
       }
-      this.nodesStore.updateNodeStatuses(statuses)
     })
 
     socket.addEventListener('close', () => this.scheduleReconnect(baseUrl, apiIndex))
@@ -275,6 +387,12 @@ class InitManager {
     if (this.refreshTimer)
       clearInterval(this.refreshTimer)
     this.refreshTimer = null
+    if (this.liveUpdateTimer)
+      clearInterval(this.liveUpdateTimer)
+    this.liveUpdateTimer = null
+    this.liveSampleQueues.clear()
+    this.livePlaybackTimes.clear()
+    this.pendingStatuses.clear()
     this.nodesStore.updateWsState('disconnected', 0)
   }
 }

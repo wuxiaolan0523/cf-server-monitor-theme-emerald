@@ -201,19 +201,19 @@ const trafficUsed = computed(() => {
   if (!node)
     return 0
 
-  const { net_total_up = 0, net_total_down = 0, traffic_limit_type } = node
+  const { net_monthly_up = 0, net_monthly_down = 0, traffic_limit_type } = node
   switch (traffic_limit_type) {
     case 'up':
-      return net_total_up
+      return net_monthly_up
     case 'down':
-      return net_total_down
+      return net_monthly_down
     case 'min':
-      return Math.min(net_total_up, net_total_down)
+      return Math.min(net_monthly_up, net_monthly_down)
     case 'max':
-      return Math.max(net_total_up, net_total_down)
+      return Math.max(net_monthly_up, net_monthly_down)
     case 'sum':
     default:
-      return net_total_up + net_total_down
+      return net_monthly_up + net_monthly_down
   }
 })
 
@@ -388,7 +388,7 @@ const trafficProgressStyle = computed(() => ({
                   <span class="text-xs sm:text-sm">总流量</span>
                   <div class="flex-1" />
                   <span class="hidden sm:block text-[11px] font-medium text-foreground/70">{{
-                    formatBytes(data?.net_total_up ?? 0) }} / {{ formatBytes(data?.net_total_down ?? 0) }}</span>
+                    formatBytes(data?.net_monthly_up ?? 0) }} / {{ formatBytes(data?.net_monthly_down ?? 0) }}</span>
                 </div>
                 <span class="text-xs sm:text-sm break-all">
                   {{ trafficUsageText }}

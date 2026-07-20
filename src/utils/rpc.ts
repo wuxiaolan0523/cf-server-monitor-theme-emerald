@@ -65,6 +65,8 @@ export interface NodeStatus {
   net_out: number
   net_total_up: number
   net_total_down: number
+  net_monthly_up: number
+  net_monthly_down: number
   process: number
   connections: number
   connections_udp: number
@@ -92,6 +94,8 @@ export interface StatusRecord {
   net_out: number
   net_total_up: number
   net_total_down: number
+  net_monthly_up: number
+  net_monthly_down: number
   process: number
   connections: number
   connections_udp: number

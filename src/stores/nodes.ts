@@ -64,6 +64,8 @@ export interface NodeData {
   net_out: number
   net_total_up: number
   net_total_down: number
+  net_monthly_up: number
+  net_monthly_down: number
   process: number
   connections: number
   connections_udp: number
@@ -91,6 +93,8 @@ interface StatusData {
   net_out: number
   net_total_up: number
   net_total_down: number
+  net_monthly_up: number
+  net_monthly_down: number
   process: number
   connections: number
   connections_udp: number
@@ -191,6 +195,8 @@ const useNodesStore = defineStore('nodes', () => {
       net_out: 0,
       net_total_up: 0,
       net_total_down: 0,
+      net_monthly_up: 0,
+      net_monthly_down: 0,
       process: 0,
       connections: 0,
       connections_udp: 0,
@@ -220,6 +226,8 @@ const useNodesStore = defineStore('nodes', () => {
       net_out: status.net_out,
       net_total_up: status.net_total_up,
       net_total_down: status.net_total_down,
+      net_monthly_up: status.net_monthly_up,
+      net_monthly_down: status.net_monthly_down,
       process: status.process,
       connections: status.connections,
       connections_udp: status.connections_udp,
@@ -248,6 +256,8 @@ const useNodesStore = defineStore('nodes', () => {
       net_out: status.net_out,
       net_total_up: status.net_total_up,
       net_total_down: status.net_total_down,
+      net_monthly_up: status.net_monthly_up,
+      net_monthly_down: status.net_monthly_down,
       process: status.process,
       connections: status.connections,
       connections_udp: status.connections_udp,
@@ -414,6 +424,8 @@ const useNodesStore = defineStore('nodes', () => {
           net_out: currentNode.net_out,
           net_total_up: currentNode.net_total_up,
           net_total_down: currentNode.net_total_down,
+          net_monthly_up: currentNode.net_monthly_up,
+          net_monthly_down: currentNode.net_monthly_down,
           process: currentNode.process,
           connections: currentNode.connections,
           connections_udp: currentNode.connections_udp,

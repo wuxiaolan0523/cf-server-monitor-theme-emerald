@@ -165,34 +165,34 @@ function showTrafficProgress(node: NodeData): boolean {
 function getTrafficUsedPercentage(node: NodeData): number {
   if (node.traffic_limit <= 0)
     return 0
-  const { net_total_up = 0, net_total_down = 0, traffic_limit_type } = node
+  const { net_monthly_up = 0, net_monthly_down = 0, traffic_limit_type } = node
   let used = 0
   switch (traffic_limit_type) {
-    case 'up': used = net_total_up
+    case 'up': used = net_monthly_up
       break
-    case 'down': used = net_total_down
+    case 'down': used = net_monthly_down
       break
-    case 'min': used = Math.min(net_total_up, net_total_down)
+    case 'min': used = Math.min(net_monthly_up, net_monthly_down)
       break
-    case 'max': used = Math.max(net_total_up, net_total_down)
+    case 'max': used = Math.max(net_monthly_up, net_monthly_down)
       break
     case 'sum':
     default:
-      used = net_total_up + net_total_down
+      used = net_monthly_up + net_monthly_down
       break
   }
   return Math.min((used / node.traffic_limit) * 100, 100)
 }
 
 function getTrafficUsed(node: NodeData): number {
-  const { net_total_up = 0, net_total_down = 0, traffic_limit_type } = node
+  const { net_monthly_up = 0, net_monthly_down = 0, traffic_limit_type } = node
   switch (traffic_limit_type) {
-    case 'up': return net_total_up
-    case 'down': return net_total_down
-    case 'min': return Math.min(net_total_up, net_total_down)
-    case 'max': return Math.max(net_total_up, net_total_down)
+    case 'up': return net_monthly_up
+    case 'down': return net_monthly_down
+    case 'min': return Math.min(net_monthly_up, net_monthly_down)
+    case 'max': return Math.max(net_monthly_up, net_monthly_down)
     case 'sum':
-    default: return net_total_up + net_total_down
+    default: return net_monthly_up + net_monthly_down
   }
 }
 
@@ -405,7 +405,7 @@ function getCustomTags(node: NodeData): Array<string> {
                       </span>
                     </div>
                     <TrafficProgress
-                      :upload="node.net_total_up ?? 0" :download="node.net_total_down ?? 0"
+                      :upload="node.net_monthly_up ?? 0" :download="node.net_monthly_down ?? 0"
                       :traffic-limit="node.traffic_limit" :traffic-limit-type="(node.traffic_limit_type || 'sum')"
                       height="4px"
                     />
@@ -413,11 +413,11 @@ function getCustomTags(node: NodeData): Array<string> {
                   <template #content>
                     <span class="flex flex-row gap-0.5 items-center whitespace-nowrap">
                       <Icon icon="tabler:chevron-up" width="12" height="12" />
-                      {{ formatBytes(node.net_total_up ?? 0) }}
+                      {{ formatBytes(node.net_monthly_up ?? 0) }}
                     </span>
                     <span class="flex flex-row gap-0.5 items-center whitespace-nowrap">
                       <Icon icon="tabler:chevron-down" width="12" height="12" />
-                      {{ formatBytes(node.net_total_down ?? 0) }}
+                      {{ formatBytes(node.net_monthly_down ?? 0) }}
                     </span>
                   </template>
                 </DataTooltip>

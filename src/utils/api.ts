@@ -107,6 +107,14 @@ export interface PublicSettings {
   dataUpdateInterval?: number
 }
 
+export function getDataUpdateIntervalMs(settings?: PublicSettings): number {
+  const configured = settings?.theme_settings?.dataUpdateInterval ?? settings?.dataUpdateInterval
+  const interval = Number(configured)
+  if (Number.isFinite(interval) && interval >= 1 && interval <= 60)
+    return interval * 1000
+  return 2000
+}
+
 export interface MeInfo {
   logged_in: boolean
   username: string
@@ -154,6 +162,15 @@ function enabled(value: unknown): boolean {
 function finiteNumber(value: unknown): number {
   const number = Number.parseFloat(String(value ?? 0))
   return Number.isFinite(number) ? number : 0
+}
+
+function numberField(source: Record<string, unknown>, ...keys: string[]): number {
+  for (const key of keys) {
+    const value = source[key]
+    if (value !== undefined && value !== null && value !== '')
+      return finiteNumber(value)
+  }
+  return 0
 }
 
 function timestamp(value: unknown, fallback = Date.now()): number {
@@ -321,12 +338,13 @@ function pingEntry(name: string, latency: unknown, loss: unknown): NodeStatusPin
 }
 
 export function adaptServer(server: CfServer, apiIndex: number): AdaptedServer {
+  const wire = server as unknown as Record<string, unknown>
   const uuid = getDisplayUuid(apiIndex, server.id)
   const baseUrl = getApiBases()[apiIndex] ?? ''
   sourceRegistry.set(uuid, { apiIndex, baseUrl, serverId: server.id })
 
   const price = parsePrice(server.price)
-  const updatedAt = timestamp(server.last_updated ?? server.timestamp, 0)
+  const updatedAt = timestamp(wire.report_timestamp ?? server.last_updated ?? server.timestamp, 0)
   const load = String(server.load_avg ?? '').split(WHITESPACE_REGEX).map(finiteNumber)
   const bootTime = timestamp(server.boot_time, Date.now())
   const now = Date.now()
@@ -388,10 +406,12 @@ export function adaptServer(server: CfServer, apiIndex: number): AdaptedServer {
       temp: 0,
       disk: finiteNumber(server.disk_used) * MB,
       disk_total: finiteNumber(server.disk_total) * MB,
-      net_in: finiteNumber(server.net_in_speed),
-      net_out: finiteNumber(server.net_out_speed),
-      net_total_up: finiteNumber(server.net_tx_monthly || server.net_tx),
-      net_total_down: finiteNumber(server.net_rx_monthly || server.net_rx),
+      net_in: numberField(wire, 'net_in_speed', 'net_in'),
+      net_out: numberField(wire, 'net_out_speed', 'net_out'),
+      net_total_up: numberField(wire, 'net_tx', 'net_total_up', 'net_tx_monthly'),
+      net_total_down: numberField(wire, 'net_rx', 'net_total_down', 'net_rx_monthly'),
+      net_monthly_up: numberField(wire, 'net_tx_monthly', 'net_tx'),
+      net_monthly_down: numberField(wire, 'net_rx_monthly', 'net_rx'),
       process: finiteNumber(server.processes),
       connections: finiteNumber(server.tcp_conn),
       connections_udp: finiteNumber(server.udp_conn),
@@ -418,6 +438,7 @@ export async function fetchAllServers(): Promise<{ clients: Record<string, Clien
 }
 
 function rowToStatusRecord(uuid: string, row: HistoryRow): StatusRecord {
+  const wire = row as Record<string, unknown>
   const time = new Date(timestamp(row.timestamp)).toISOString()
   const load = String(row.load_avg ?? '').split(WHITESPACE_REGEX).map(finiteNumber)
   return {
@@ -435,10 +456,12 @@ function rowToStatusRecord(uuid: string, row: HistoryRow): StatusRecord {
     temp: 0,
     disk: finiteNumber(row.disk_used) * MB,
     disk_total: finiteNumber(row.disk_total) * MB,
-    net_in: finiteNumber(row.net_in_speed),
-    net_out: finiteNumber(row.net_out_speed),
-    net_total_up: finiteNumber(row.net_tx_monthly ?? row.net_tx),
-    net_total_down: finiteNumber(row.net_rx_monthly ?? row.net_rx),
+    net_in: numberField(wire, 'net_in_speed', 'net_in'),
+    net_out: numberField(wire, 'net_out_speed', 'net_out'),
+    net_total_up: numberField(wire, 'net_tx', 'net_total_up', 'net_tx_monthly'),
+    net_total_down: numberField(wire, 'net_rx', 'net_total_down', 'net_rx_monthly'),
+    net_monthly_up: numberField(wire, 'net_tx_monthly', 'net_tx'),
+    net_monthly_down: numberField(wire, 'net_rx_monthly', 'net_rx'),
     process: finiteNumber(row.processes),
     connections: finiteNumber(row.tcp_conn),
     connections_udp: finiteNumber(row.udp_conn),
@@ -528,9 +551,9 @@ export class CfMonitorApi {
         earthViewMode: 'maps',
         visitorInfoCardEnabled: false,
         disablePageAnimation: true,
-        dataUpdateInterval: 5,
+        dataUpdateInterval: 1,
       },
-      dataUpdateInterval: 5,
+      dataUpdateInterval: 1,
     }
   }
 

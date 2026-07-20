@@ -77,34 +77,34 @@ function showTrafficProgress(node: NodeData): boolean {
 const trafficUsedPercentage = computed(() => {
   if (props.node.traffic_limit <= 0)
     return 0
-  const { net_total_up = 0, net_total_down = 0, traffic_limit_type } = props.node
+  const { net_monthly_up = 0, net_monthly_down = 0, traffic_limit_type } = props.node
   let used = 0
   switch (traffic_limit_type) {
-    case 'up': used = net_total_up
+    case 'up': used = net_monthly_up
       break
-    case 'down': used = net_total_down
+    case 'down': used = net_monthly_down
       break
-    case 'min': used = Math.min(net_total_up, net_total_down)
+    case 'min': used = Math.min(net_monthly_up, net_monthly_down)
       break
-    case 'max': used = Math.max(net_total_up, net_total_down)
+    case 'max': used = Math.max(net_monthly_up, net_monthly_down)
       break
     case 'sum':
     default:
-      used = net_total_up + net_total_down
+      used = net_monthly_up + net_monthly_down
       break
   }
   return Math.min((used / props.node.traffic_limit) * 100, 100)
 })
 
 const trafficUsed = computed(() => {
-  const { net_total_up = 0, net_total_down = 0, traffic_limit_type } = props.node
+  const { net_monthly_up = 0, net_monthly_down = 0, traffic_limit_type } = props.node
   switch (traffic_limit_type) {
-    case 'up': return net_total_up
-    case 'down': return net_total_down
-    case 'min': return Math.min(net_total_up, net_total_down)
-    case 'max': return Math.max(net_total_up, net_total_down)
+    case 'up': return net_monthly_up
+    case 'down': return net_monthly_down
+    case 'min': return Math.min(net_monthly_up, net_monthly_down)
+    case 'max': return Math.max(net_monthly_up, net_monthly_down)
     case 'sum':
-    default: return net_total_up + net_total_down
+    default: return net_monthly_up + net_monthly_down
   }
 })
 
@@ -257,11 +257,11 @@ function openPingDialog() {
                   <div class="text-[11px] flex flex-col">
                     <div class="flex flex-row items-center gap-1">
                       <Icon icon="tabler:chevron-up" width="12" height="12" />
-                      {{ formatBytes(props.node.net_total_up ?? 0) }}
+                      {{ formatBytes(props.node.net_monthly_up ?? 0) }}
                     </div>
                     <div class="flex flex-row items-center gap-1">
                       <Icon icon="tabler:chevron-down" width="12" height="12" />
-                      {{ formatBytes(props.node.net_total_down ?? 0) }}
+                      {{ formatBytes(props.node.net_monthly_down ?? 0) }}
                     </div>
                   </div>
                 </div>

@@ -13,6 +13,7 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useBackgroundSurface } from '@/composables/useBackgroundSurface'
 import { useAppStore } from '@/stores/app'
 import { useNodesStore } from '@/stores/nodes'
+import { getDataUpdateIntervalMs } from '@/utils/api'
 import { formatBytes, formatBytesSplit } from '@/utils/helper'
 import { fillMissingTimePoints } from '@/utils/recordHelper'
 import { getSharedRpc } from '@/utils/rpc'
@@ -31,13 +32,7 @@ const maxRecordPreserveTime = computed(() => appStore.publicSettings?.record_pre
 
 // 从 publicSettings.theme_settings 获取数据更新间隔（秒），默认 3 秒
 const dataUpdateInterval = computed(() => {
-  const settings = appStore.publicSettings?.theme_settings
-  const interval = settings?.dataUpdateInterval
-  // 确保值在合理范围内（1-60秒）
-  if (typeof interval === 'number' && interval >= 1 && interval <= 60) {
-    return interval * 1000 // 转换为毫秒
-  }
-  return 3000 // 默认 3 秒
+  return getDataUpdateIntervalMs(appStore.publicSettings)
 })
 
 // 使用 store 中的 isDark computed
