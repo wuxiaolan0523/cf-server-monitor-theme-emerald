@@ -22,6 +22,7 @@ const HOP_BY_HOP_HEADERS = new Set([
 ])
 const RESPONSE_HEADERS_TO_SKIP = new Set([...HOP_BY_HOP_HEADERS, 'content-encoding'])
 const PROXY_PATH_REGEX = /^\/(?:api|flags|os-icons)(?:\/|$)/
+const STATIC_ASSET_PATH_REGEX = /^\/(?:flags|os-icons)(?:\/|$)/
 const TRAILING_SLASHES_REGEX = /\/+$/
 
 function firstQueryValue(value: string | string[] | undefined): string {
@@ -86,6 +87,8 @@ export default async function handler(request: VercelRequest, response: VercelRe
       if (!RESPONSE_HEADERS_TO_SKIP.has(key))
         response.setHeader(key, value)
     })
+    if (STATIC_ASSET_PATH_REGEX.test(path))
+      response.setHeader('Cache-Control', 'public, max-age=31536000, immutable')
     response.send(Buffer.from(await upstream.arrayBuffer()))
   }
   catch (error) {
