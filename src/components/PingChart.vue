@@ -10,6 +10,7 @@ import { Spinner } from '@/components/ui/spinner'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useBackgroundSurface } from '@/composables/useBackgroundSurface'
 import { useAppStore } from '@/stores/app'
+import { useNodesStore } from '@/stores/nodes'
 import { DEFAULT_CHART_TIME_RANGE, getAvailableChartTimeRanges } from '@/utils/chartTimeRange'
 import { cutPeakValues, interpolateNullsLinear } from '@/utils/recordHelper'
 import { getSharedRpc, RpcError } from '@/utils/rpc'
@@ -21,6 +22,8 @@ const props = defineProps<{
 
 const appStore = useAppStore()
 const { pickSurfaceClass } = useBackgroundSurface()
+const nodesStore = useNodesStore()
+const nodeInfo = computed(() => nodesStore.nodesByUuid.get(props.uuid))
 const isDark = computed(() => appStore.isDark)
 // 使用共享的 RPC 实例，避免重复创建连接
 const rpc = getSharedRpc()
@@ -75,6 +78,8 @@ interface PingRecord {
   task_id: number
   time: string
   value: number
+  loss?: number
+  metric?: 'latency' | 'loss'
 }
 
 interface TaskInfo {
@@ -212,14 +217,13 @@ async function fetchMetricRecords(uuid: string, hours: number): Promise<PingChar
       if (point.value === null)
         continue
 
-      if (series.metric_key === 'ping.loss' && point.value <= 0)
-        continue
-
       records.push({
         client: uuid,
         task_id: taskId,
         time: point.time,
         value: series.metric_key === 'ping.loss' ? -1 : point.value,
+        loss: series.metric_key === 'ping.loss' ? point.value : undefined,
+        metric: series.metric_key === 'ping.loss' ? 'loss' : 'latency',
       })
     }
   }
@@ -327,6 +331,9 @@ const mergedData = computed(() => {
   const anchors: number[] = []
 
   for (const rec of data) {
+    if (rec.metric === 'loss')
+      continue
+
     const ts = dayjs(rec.time).valueOf()
     let anchor: number | null = null
 
@@ -433,7 +440,7 @@ const latestValues = computed(() => {
   for (const task of tasks.value) {
     for (let i = remoteData.value.length - 1; i >= 0; i--) {
       const rec = remoteData.value[i]
-      if (rec && rec.task_id === task.id && rec.value >= 0) {
+      if (rec && rec.metric !== 'loss' && rec.task_id === task.id && rec.value >= 0) {
         latestMap.set(task.id, rec.value)
         break
       }
@@ -454,8 +461,47 @@ const selectedTasks = computed(() => {
   return tasks.value.filter(t => selectedTaskIds.value.includes(t.id))
 })
 
+const PING_TASK_KEYS: Record<number, string> = {
+  1: 'ct',
+  2: 'cu',
+  3: 'cm',
+  4: 'bd',
+}
+
+function appendRealtimePing(node: NonNullable<typeof nodeInfo.value>): void {
+  if (selectedView.value !== DEFAULT_CHART_TIME_RANGE.label || !node.time || !node.ping)
+    return
+
+  const time = node.time
+  const taskIds = tasks.value.length ? tasks.value.map(task => task.id) : Object.keys(PING_TASK_KEYS).map(Number)
+  const records = taskIds.flatMap((taskId) => {
+    const key = PING_TASK_KEYS[taskId]
+    const ping = key ? node.ping?.[key] : undefined
+    if (!ping)
+      return []
+
+    return [{
+      client: node.uuid,
+      task_id: taskId,
+      time,
+      value: ping.latest > 0 ? ping.latest : -1,
+      loss: ping.loss,
+      metric: 'latency' as const,
+    }]
+  })
+
+  if (!records.length)
+    return
+
+  const recordKeys = new Set(records.map(record => `${record.task_id}:${record.time}`))
+  const existing = remoteData.value.filter(record => !recordKeys.has(`${record.task_id}:${record.time}`))
+  remoteData.value = [...existing, ...records]
+    .sort((a, b) => dayjs(a.time).valueOf() - dayjs(b.time).valueOf())
+    .slice(-500)
+}
+
 const packetLossMarkers = computed(() => {
-  const data = mergedData.value
+  const data = chartData.value
   const markers = new Map<number, number[]>()
 
   if (!data.length || !selectedTasks.value.length)
@@ -466,7 +512,9 @@ const packetLossMarkers = computed(() => {
 
   for (const task of selectedTasks.value) {
     const points = new Set<number>()
-    const taskLossRecords = remoteData.value.filter(rec => rec.task_id === task.id && rec.value < 0)
+    const taskLossRecords = remoteData.value.filter(rec =>
+      rec.task_id === task.id && ((rec.loss ?? 0) > 0 || (rec.metric !== 'loss' && rec.value < 0)),
+    )
 
     for (const record of taskLossRecords) {
       const lossTs = dayjs(record.time).valueOf()
@@ -686,6 +734,11 @@ watch(() => props.uuid, () => {
   tasks.value = []
   selectedTaskIds.value = []
   fetchRecords()
+})
+
+watch(nodeInfo, (node) => {
+  if (node)
+    appendRealtimePing(node)
 })
 
 onMounted(() => {

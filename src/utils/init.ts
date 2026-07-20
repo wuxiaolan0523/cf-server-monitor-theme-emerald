@@ -247,6 +247,19 @@ class InitManager {
         status.swap_total = current.swap_total
       if (!sampleHasField(sample.data, 'disk_total'))
         status.disk_total = current.disk_total
+      if (!sampleHasField(
+        sample.data,
+        'ping_ct',
+        'ping_cu',
+        'ping_cm',
+        'ping_bd',
+        'loss_ct',
+        'loss_cu',
+        'loss_cm',
+        'loss_bd',
+      )) {
+        status.ping = current.ping
+      }
     }
 
     this.queueNodeStatuses({ [uuid]: status })

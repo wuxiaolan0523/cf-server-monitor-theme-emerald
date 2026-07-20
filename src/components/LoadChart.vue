@@ -2,7 +2,6 @@
 import type { RecordFormat } from '@/utils/recordHelper'
 import type { StatusRecord } from '@/utils/rpc'
 import { Icon } from '@iconify/vue'
-import { useIntervalFn } from '@vueuse/core'
 import dayjs from 'dayjs'
 import { computed, onMounted, ref, shallowRef, watch } from 'vue'
 import VChart from 'vue-echarts'
@@ -13,7 +12,6 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useBackgroundSurface } from '@/composables/useBackgroundSurface'
 import { useAppStore } from '@/stores/app'
 import { useNodesStore } from '@/stores/nodes'
-import { getDataUpdateIntervalMs } from '@/utils/api'
 import { DEFAULT_CHART_TIME_RANGE, getAvailableChartTimeRanges } from '@/utils/chartTimeRange'
 import { formatBytes, formatBytesSplit } from '@/utils/helper'
 import { fillMissingTimePoints } from '@/utils/recordHelper'
@@ -30,11 +28,6 @@ const nodesStore = useNodesStore()
 
 // 从 publicSettings 获取记录保留时间
 const maxRecordPreserveTime = computed(() => appStore.publicSettings?.record_preserve_time || 720)
-
-// 从 publicSettings.theme_settings 获取数据更新间隔（秒），默认 3 秒
-const dataUpdateInterval = computed(() => {
-  return getDataUpdateIntervalMs(appStore.publicSettings)
-})
 
 // 使用 store 中的 isDark computed
 const isDark = computed(() => appStore.isDark)
@@ -181,6 +174,47 @@ async function fetchRecentData() {
     loading.value = false
     isInitialLoad.value = false
   }
+}
+
+function nodeToStatusRecord(node: NonNullable<typeof nodeInfo.value>): StatusRecord {
+  return {
+    client: node.uuid,
+    time: node.time,
+    cpu: node.cpu,
+    gpu: node.gpu,
+    ram: node.ram,
+    ram_total: node.mem_total,
+    swap: node.swap,
+    swap_total: node.swap_total,
+    load: node.load,
+    load5: node.load5,
+    load15: node.load15,
+    temp: node.temp,
+    disk: node.disk,
+    disk_total: node.disk_total,
+    net_in: node.net_in,
+    net_out: node.net_out,
+    net_total_up: node.net_total_up,
+    net_total_down: node.net_total_down,
+    net_monthly_up: node.net_monthly_up,
+    net_monthly_down: node.net_monthly_down,
+    process: node.process,
+    connections: node.connections,
+    connections_udp: node.connections_udp,
+  }
+}
+
+function appendRealtimeStatus(node: NonNullable<typeof nodeInfo.value>): void {
+  if (!isRealtime.value || !node.time)
+    return
+
+  const next = nodeToStatusRecord(node)
+  const nextTime = dayjs(next.time).valueOf()
+  const lastTime = dayjs(remoteData.value.at(-1)?.time ?? '').valueOf()
+  if (!Number.isFinite(nextTime) || nextTime <= lastTime)
+    return
+
+  remoteData.value = [...remoteData.value, next].slice(-150)
 }
 
 async function fetchHistoryData() {
@@ -764,26 +798,12 @@ const processChartOption = computed(() => ({
   ],
 }))
 
-// ==================== 实时更新 ====================
-
-// 使用 VueUse 的 useIntervalFn 自动管理定时器
-const { pause: pauseRealtimeUpdate, resume: resumeRealtimeUpdate } = useIntervalFn(
-  () => fetchData(),
-  dataUpdateInterval,
-  { immediate: false },
-)
-
-// 根据是否为实时模式控制定时器
-watch(isRealtime, (realtime) => {
-  if (realtime) {
-    resumeRealtimeUpdate()
-  }
-  else {
-    pauseRealtimeUpdate()
-  }
-}, { immediate: true })
-
 // 生命周期 ====================
+
+watch(nodeInfo, (node) => {
+  if (node)
+    appendRealtimeStatus(node)
+})
 
 watch(selectedView, () => {
   isInitialLoad.value = true // 切换视图时重置首次加载状态

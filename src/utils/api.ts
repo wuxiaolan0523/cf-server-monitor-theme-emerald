@@ -498,7 +498,13 @@ export async function fetchPingHistory(uuid: string, hours = 1): Promise<{
       if (latencyValue === undefined && row[`loss_${task.key}`] === undefined)
         continue
       const latency = finiteNumber(latencyValue)
-      records.push({ client: uuid, task_id: task.id, time, value: lossValue >= 100 || latency <= 0 ? -1 : latency })
+      records.push({
+        client: uuid,
+        task_id: task.id,
+        time,
+        value: lossValue >= 100 || latency <= 0 ? -1 : latency,
+        loss: lossValue,
+      })
       const taskLosses = losses.get(task.id) ?? []
       taskLosses.push(lossValue)
       losses.set(task.id, taskLosses)

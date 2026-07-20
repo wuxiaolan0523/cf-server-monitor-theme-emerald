@@ -106,6 +106,7 @@ export interface PingRecord {
   task_id: number
   time: string
   value: number
+  loss?: number
 }
 
 export class RpcError extends Error {
