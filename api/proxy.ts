@@ -9,6 +9,7 @@ interface VercelRequest extends IncomingMessage {
 interface VercelResponse extends ServerResponse {
   status: (code: number) => VercelResponse
   json: (body: unknown) => void
+  send: (body: unknown) => void
 }
 
 const HOP_BY_HOP_HEADERS = new Set([
@@ -78,12 +79,12 @@ export default async function handler(request: VercelRequest, response: VercelRe
       body: body as unknown as BodyInit,
     })
 
-    response.statusCode = upstream.status
+    response.status(upstream.status)
     upstream.headers.forEach((value, key) => {
       if (!HOP_BY_HOP_HEADERS.has(key))
         response.setHeader(key, value)
     })
-    response.end(Buffer.from(await upstream.arrayBuffer()))
+    response.send(Buffer.from(await upstream.arrayBuffer()))
   }
   catch (error) {
     response.status(502).json({ error: error instanceof Error ? error.message : 'Backend request failed' })
