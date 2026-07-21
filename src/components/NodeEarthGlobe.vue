@@ -339,7 +339,8 @@ function stopGlobe() {
   if (canvasRef.value && containerRef.value) {
     const cobeWrapper = canvasRef.value.parentElement
     if (cobeWrapper && cobeWrapper !== containerRef.value) {
-      containerRef.value.appendChild(canvasRef.value)
+      // Keep the canvas before the overlays so Cobe's next wrapper remains below them.
+      containerRef.value.insertBefore(canvasRef.value, containerRef.value.firstChild)
       cobeWrapper.remove()
     }
   }
