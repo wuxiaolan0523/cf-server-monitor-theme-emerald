@@ -9,11 +9,11 @@
 - 卡片和表格两种节点视图
 - 多分组、搜索、地区旗帜和操作系统图标
 - CPU、内存、磁盘、流量、网络和 Ping 历史图表
-- CF Server Monitor WebSocket 实时更新与断线重连
+- `CF Server Monitor` WebSocket 实时更新与断线重连
 - 单后端 Turnstile 验证
 - 多后端聚合，详情页保留数据源信息
 - 深色、浅色和跟随系统主题
-- Hash 路由，可部署到 `Vercel` `Cloudflare` `EdgeOne` `Github Pages` 或普通静态服务器
+- Hash 路由，可部署到 `Vercel` `Cloudflare` `EdgeOne` `Github Pages` 或其他静态服务器
 
 ## 一键部署
 
@@ -27,6 +27,137 @@
 - `API_BASE` 是 CF Server Monitor Worker 的地址，例如 `https://monitor.example.com`。
 - `PROXY_BACKEND` 开启后 `/api`、`/flags`、`/os-icons` 将通过代理转发到 `API_BASE`，可起到一定的加速作用
 - `PROXY_WEBSOCKET` 开启后 WebSocket 将通过代理转发到 `API_BASE`，可起到一定的加速作用（Vercel & Github Pages 不支持）
+
+## 主题设置
+
+拷贝&调整下方参数，将其填入到 **CF Server Monitor** 后端设置页面的 `主题自定义配置 JSON` 中并保存。
+
+```
+{
+  "configuration": [
+    {
+      "key": "defaultViewMode",
+      "value": "card",
+      "options": "card,list",
+      "description": "节点列表的默认显示模式"
+    },
+    {
+      "key": "alertEnabled",
+      "value": "false",
+      "options": "",
+      "description": "在首页显示自定义公告"
+    },
+    {
+      "key": "alertTitle",
+      "value": "",
+      "options": "",
+      "description": "公告的标题内容"
+    },
+    {
+      "key": "alertContent",
+      "value": "",
+      "options": "",
+      "description": "公告的详细内容（支持简单 Markdown 格式）"
+    },
+    {
+      "key": "earthViewMode",
+      "value": "maps",
+      "options": "earth,earth-stop,maps,cards,hide",
+      "description": "earth：自转地球；earth-stop：静止地球；maps：点状地图；cards：仅显示头部卡片；hide：隐藏整个头部"
+    },
+    {
+      "key": "visitorInfoCardEnabled",
+      "value": "true",
+      "options": "",
+      "description": "显示访客来源、设备和浏览器信息卡片"
+    },
+    {
+      "key": "hideAdminEntryWhenLoggedOut",
+      "value": "false",
+      "options": "",
+      "description": "隐藏顶部管理后台按钮"
+    },
+    {
+      "key": "disablePageAnimation",
+      "value": "false",
+      "options": "",
+      "description": "减少页面过渡动画效果，提升访问速度和响应性"
+    },
+    {
+      "key": "icpEnabled",
+      "value": "false",
+      "options": "",
+      "description": "在页脚显示网站备案号"
+    },
+    {
+      "key": "icpNumber",
+      "value": "",
+      "options": "",
+      "description": "网站备案号（如：京ICP备12345678号）"
+    },
+    {
+      "key": "icpUrl",
+      "value": "https://beian.miit.gov.cn/",
+      "options": "",
+      "description": "点击备案号跳转的链接地址"
+    },
+    {
+      "key": "policeEnabled",
+      "value": "false",
+      "options": "",
+      "description": "在页脚显示公安备案信息"
+    },
+    {
+      "key": "policeNumber",
+      "value": "",
+      "options": "",
+      "description": "公安备案号（如：京公网安备 11010502000000号）"
+    },
+    {
+      "key": "policeUrl",
+      "value": "",
+      "options": "",
+      "description": "点击公安备案号跳转的链接地址，留空则不跳转"
+    },
+    {
+      "key": "backgroundEnabled",
+      "value": "false",
+      "options": "",
+      "description": "启用后可设置自定义图片或视频作为页面背景"
+    },
+    {
+      "key": "backgroundType",
+      "value": "image",
+      "options": "image,video",
+      "description": "选择背景类型：图片或视频"
+    },
+    {
+      "key": "lightBackgroundUrl",
+      "value": "",
+      "options": "",
+      "description": "亮色模式下的背景图片/视频 URL"
+    },
+    {
+      "key": "darkBackgroundUrl",
+      "value": "",
+      "options": "",
+      "description": "暗色模式下的背景图片/视频 URL"
+    },
+    {
+      "key": "backgroundBlur",
+      "value": "0",
+      "options": "",
+      "description": "背景的高斯模糊半径（单位：px），0 表示不模糊"
+    },
+    {
+      "key": "backgroundOverlay",
+      "value": "0",
+      "options": "",
+      "description": "背景遮罩强度（-100 到 100）：负数降低背景透明度，0 表示关闭，正数为黑色遮罩，绝对值越大效果越明显"
+    }
+  ]
+}
+```
 
 ## 开发
 
