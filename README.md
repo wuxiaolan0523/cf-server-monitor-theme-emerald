@@ -1,8 +1,8 @@
-# Emerald Theme for CF Server Monitor
+# <p align="center">Emerald Theme for CF Server Monitor</p>
 
-基于 Vue 3 + Vite + reka-ui + Tailwind CSS v4 构建的 [CF Server Monitor](https://github.com/huilang-me/CF-Server-Monitor) 主题
+<p align="center">基于 Vue 3 + Vite + reka-ui + Tailwind CSS v4 构建的 CF Server Monitor主题</p>
 
-支持一键部署到 Vercel、Cloudflare、Github Pages，也可自部署到 EdgeOne Page、VPS 等环境。
+<p align="center">支持一键部署到 Vercel、Cloudflare、EdgeOne、Github Pages，也可自部署到 VPS 或其他静态服务器。</p>
 
 ## 功能
 
@@ -13,16 +13,16 @@
 - 单后端 Turnstile 验证
 - 多后端聚合，详情页保留数据源信息
 - 深色、浅色和跟随系统主题
-- Hash 路由，可部署到 GitHub Pages、Cloudflare Pages、Vercel 或普通静态服务器
+- Hash 路由，可部署到 `Vercel` `Cloudflare` `EdgeOne` `Github Pages` 或普通静态服务器
 
 ## 一键部署
 
-|  | Vercel | Cloudflare | Github Pages |
-| ---- | ---- | ---- | ---- |
-|  | [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/Tokinx/cf-server-monitor-theme-emerald) | [![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/Tokinx/cf-server-monitor-theme-emerald) | / |
-| API_BASE | | https://monitor.example.com | |
-| PROXY_BACKEND | **true** / false | true / **false** | **false** |
-| PROXY_WEBSOCKET | **false** | true / **false** | **false** |
+|  | Vercel | Cloudflare | EdgeOne | Github Pages |
+| ---- | ---- | ---- | ---- | ---- |
+|  | [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/Tokinx/cf-server-monitor-theme-emerald) | [![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/Tokinx/cf-server-monitor-theme-emerald) | [![使用 EdgeOne Makers 部署](https://cdnstatic.tencentcs.com/edgeone/pages/deploy.svg)](https://edgeone.ai/pages/new?repository-url=https://github.com/Tokinx/cf-server-monitor-theme-emerald) | / |
+| API_BASE | https://monitor.example.com | https://monitor.example.com | https://monitor.example.com | https://monitor.example.com |
+| PROXY_BACKEND | **true** / false | true / **false** | **false** | **false** |
+| PROXY_WEBSOCKET | **false** | true / **false** | **false** | **false** |
 
 - `API_BASE` 是 CF Server Monitor Worker 的地址，例如 `https://monitor.example.com`。
 - `PROXY_BACKEND` 开启后 `/api`、`/flags`、`/os-icons` 将通过代理转发到 `API_BASE`，可起到一定的加速作用
