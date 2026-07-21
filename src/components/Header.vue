@@ -6,15 +6,14 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import { DataTooltip } from '@/components/ui/data-tooltip'
 import { useAppStore } from '@/stores/app'
-import { buildAdminUrl } from '@/utils/api'
-import { publicAsset } from '@/utils/publicAsset'
+import { buildAdminUrl, getDirectApiAssetUrl } from '@/utils/api'
 
 const router = useRouter()
 const appStore = useAppStore()
 
 const isScrolled = inject<ReturnType<typeof ref<boolean>>>('isScrolled', ref(false))
 
-const siteFavicon = ref(publicAsset('favicon.ico'))
+const siteFavicon = ref(getDirectApiAssetUrl('favicon.ico'))
 
 const actionButtons = computed(() => {
   const buttons = [

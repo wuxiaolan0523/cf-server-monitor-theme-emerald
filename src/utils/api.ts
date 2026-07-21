@@ -191,6 +191,10 @@ function normalizeBase(value: string): string {
   return value.trim().replace(TRAILING_SLASHES_REGEX, '')
 }
 
+function getConfiguredApiBases(): string[] {
+  return getMetaContent('apiBase').split(',').map(normalizeBase).filter(Boolean)
+}
+
 export function isProxyBackendEnabled(): boolean {
   return getMetaContent('proxyBackend').toLowerCase() === 'true'
 }
@@ -203,8 +207,7 @@ export function getApiBases(): string[] {
   if (isProxyBackendEnabled())
     return ['']
 
-  const configured = getMetaContent('apiBase')
-  const bases = configured.split(',').map(normalizeBase).filter(Boolean)
+  const bases = getConfiguredApiBases()
   if (bases.length)
     return [...new Set(bases)]
   return [typeof window === 'undefined' ? '' : window.location.origin]
@@ -217,6 +220,13 @@ export function getWebSocketBases(): string[] {
   const configured = getMetaContent('webSocketBase')
   const bases = configured.split(',').map(normalizeBase).filter(Boolean)
   return bases.length ? [...new Set(bases)] : getApiBases()
+}
+
+export function getDirectApiAssetUrl(path: string, apiIndex = 0): string {
+  const bases = getConfiguredApiBases()
+  const base = bases[apiIndex] ?? bases[0] ?? ''
+  const cleanPath = path.replace(LEADING_SLASHES_REGEX, '')
+  return base ? `${base}/${cleanPath}` : getApiAssetUrl(path, apiIndex)
 }
 
 export function getApiAssetUrl(path: string, apiIndex = 0): string {

@@ -10,7 +10,6 @@ const AMPERSAND_REGEX = /&/g
 const DOUBLE_QUOTE_REGEX = /"/g
 const LESS_THAN_REGEX = /</g
 const GREATER_THAN_REGEX = />/g
-const TITLE_TAG_REGEX = /<title>.*<\/title>/
 const API_BASE_META_REGEX = /<meta name="apiBase" content="[^"]*"\s*\/?>/
 const WEBSOCKET_BASE_META_REGEX = /<meta name="webSocketBase" content="[^"]*"\s*\/?>/
 const PROXY_BACKEND_META_REGEX = /<meta name="proxyBackend" content="[^"]*"\s*\/?>/
@@ -100,9 +99,7 @@ export default defineConfig(({ mode, command }) => {
         name: 'cf-server-monitor-runtime-config',
         transformIndexHtml(html) {
           let result = html
-          if (env.TITLE)
-            result = result.replace(TITLE_TAG_REGEX, `<title>${escapeHtml(env.TITLE)}</title>`)
-          if (command === 'build' && !proxyBackend && apiBases.length) {
+          if (command === 'build' && apiBases.length) {
             result = result.replace(
               API_BASE_META_REGEX,
               `<meta name="apiBase" content="${escapeHtml(apiBases.join(','))}" />`,
@@ -121,12 +118,6 @@ export default defineConfig(({ mode, command }) => {
               PROXY_WEBSOCKET_META_REGEX,
               `<meta name="proxyWebSocket" content="${proxyWebSocket ? 'true' : 'false'}" />`,
             )
-          }
-          if (env.BACKGROUND_IMAGE) {
-            const background = env.BACKGROUND_IMAGE
-              .replaceAll('\\', '\\\\')
-              .replaceAll('\'', '\\\'')
-            result = result.replace('</head>', `<style>body{background-image:url('${background}');background-size:cover;background-position:center;background-attachment:fixed}</style></head>`)
           }
           if (apiBases.length || cspApi.length || cspStatic.length) {
             const staticOrigins = cspStatic.join(' ')
