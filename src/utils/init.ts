@@ -7,7 +7,6 @@ import {
   cfRequest,
   fetchAllServers,
   fetchSiteConfigs,
-  getDataUpdateIntervalMs,
   getDisplayUuid,
   getRegisteredServerIds,
   getSharedApi,
@@ -60,6 +59,7 @@ function sampleHasField(data: Record<string, unknown>, ...keys: string[]): boole
 }
 
 const TURNSTILE_SCRIPT = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit'
+const LIVE_UPDATE_INTERVAL_MS = 1000
 let turnstileScriptPromise: Promise<TurnstileApi> | null = null
 
 function getTurnstile(): TurnstileApi | undefined {
@@ -180,12 +180,11 @@ class InitManager {
       this.appStore.publicSettings = await getSharedApi().getPublicSettings()
       this.appStore.updateLoginState(configs.some(item => item.authorization))
       await this.loadNodes()
-      const updateInterval = getDataUpdateIntervalMs(this.appStore.publicSettings)
       this.connectAllSockets()
       this.liveUpdateTimer = setInterval(() => {
         this.advanceLiveSamples()
         this.flushPendingStatuses()
-      }, updateInterval)
+      }, LIVE_UPDATE_INTERVAL_MS)
     }
     catch (error) {
       this.appStore.connectionError = true

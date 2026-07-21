@@ -1,4 +1,4 @@
-import type { PublicSettings } from '@/utils/api'
+import type { EarthViewMode, NodeViewMode, PublicSettings } from '@/utils/api'
 import type { ByteDecimalsConfig } from '@/utils/helper'
 import { usePreferredDark, useStorageAsync } from '@vueuse/core'
 import { defineStore } from 'pinia'
@@ -6,9 +6,6 @@ import { computed, ref, watch } from 'vue'
 
 export type ThemeMode = 'auto' | 'light' | 'dark'
 type Lang = 'zh-CN' | 'en-US'
-type NodeViewMode = 'card' | 'list'
-type RpcTransportMode = 'websocket' | 'http'
-type EarthViewMode = 'maps' | 'cards' | 'hide'
 
 /** 固定的字节精度配置 */
 const BYTE_DECIMALS: ByteDecimalsConfig = {
@@ -21,10 +18,6 @@ const BYTE_DECIMALS: ByteDecimalsConfig = {
 
 function isValidThemeMode(value: unknown): value is ThemeMode {
   return value === 'auto' || value === 'light' || value === 'dark'
-}
-
-function isValidEarthViewMode(value: unknown): value is EarthViewMode {
-  return value === 'maps' || value === 'cards' || value === 'hide'
 }
 
 const useAppStore = defineStore('app', () => {
@@ -46,14 +39,7 @@ const useAppStore = defineStore('app', () => {
 
   // 计算属性：从主题配置获取默认视图模式
   const defaultViewMode = computed<NodeViewMode>(() => {
-    const settings = publicSettings.value?.theme_settings
-    if (settings && typeof settings.defaultViewMode === 'string') {
-      const mode = settings.defaultViewMode
-      if (mode === 'card' || mode === 'list') {
-        return mode
-      }
-    }
-    return 'card'
+    return publicSettings.value?.themeSettings.defaultViewMode ?? 'card'
   })
 
   // 校验视图模式是否为合法值
@@ -75,178 +61,87 @@ const useAppStore = defineStore('app', () => {
     },
   })
 
-  // 计算属性：从主题配置获取 RPC 连接模式
-  const rpcTransportMode = computed<RpcTransportMode>(() => {
-    const settings = publicSettings.value?.theme_settings
-    if (settings && typeof settings.rpcTransportMode === 'string') {
-      const mode = settings.rpcTransportMode
-      if (mode === 'websocket' || mode === 'http') {
-        return mode
-      }
-    }
-    return 'websocket'
-  })
-
   // 字节格式化精度（固定配置）
   const byteDecimals: ByteDecimalsConfig = { ...BYTE_DECIMALS }
 
   // 计算属性：公告配置
   const alertEnabled = computed<boolean>(() => {
-    const settings = publicSettings.value?.theme_settings
-    if (settings && typeof settings.alertEnabled === 'boolean') {
-      return settings.alertEnabled
-    }
-    return false
+    return publicSettings.value?.themeSettings.alertEnabled ?? false
   })
 
   const alertTitle = computed<string>(() => {
-    const settings = publicSettings.value?.theme_settings
-    if (settings && typeof settings.alertTitle === 'string') {
-      return settings.alertTitle
-    }
-    return ''
+    return publicSettings.value?.themeSettings.alertTitle ?? ''
   })
 
   const alertContent = computed<string>(() => {
-    const settings = publicSettings.value?.theme_settings
-    if (settings && typeof settings.alertContent === 'string') {
-      return settings.alertContent
-    }
-    return ''
+    return publicSettings.value?.themeSettings.alertContent ?? ''
   })
 
   const earthViewMode = computed<EarthViewMode>(() => {
-    const settings = publicSettings.value?.theme_settings
-    if (settings && typeof settings.earthViewMode === 'string' && isValidEarthViewMode(settings.earthViewMode)) {
-      return settings.earthViewMode
-    }
-    return 'maps'
+    return publicSettings.value?.themeSettings.earthViewMode ?? 'earth'
   })
 
   const visitorInfoCardEnabled = computed<boolean>(() => {
-    const settings = publicSettings.value?.theme_settings
-    if (settings && typeof settings.visitorInfoCardEnabled === 'boolean') {
-      return settings.visitorInfoCardEnabled
-    }
-    return true
+    return publicSettings.value?.themeSettings.visitorInfoCardEnabled ?? true
   })
 
   const hideAdminEntryWhenLoggedOut = computed<boolean>(() => {
-    const settings = publicSettings.value?.theme_settings
-    if (settings && typeof settings.hideAdminEntryWhenLoggedOut === 'boolean') {
-      return settings.hideAdminEntryWhenLoggedOut
-    }
-    return false
+    return publicSettings.value?.themeSettings.hideAdminEntryWhenLoggedOut ?? false
   })
 
   const disablePageAnimation = computed<boolean>(() => {
-    const settings = publicSettings.value?.theme_settings
-    if (settings && typeof settings.disablePageAnimation === 'boolean') {
-      return settings.disablePageAnimation
-    }
-    return false
+    return publicSettings.value?.themeSettings.disablePageAnimation ?? false
   })
 
   // 计算属性：ICP 备案配置
   const icpEnabled = computed<boolean>(() => {
-    const settings = publicSettings.value?.theme_settings
-    if (settings && typeof settings.icpEnabled === 'boolean') {
-      return settings.icpEnabled
-    }
-    return false
+    return publicSettings.value?.themeSettings.icpEnabled ?? false
   })
 
   const icpNumber = computed<string>(() => {
-    const settings = publicSettings.value?.theme_settings
-    if (settings && typeof settings.icpNumber === 'string') {
-      return settings.icpNumber
-    }
-    return ''
+    return publicSettings.value?.themeSettings.icpNumber ?? ''
   })
 
   const icpUrl = computed<string>(() => {
-    const settings = publicSettings.value?.theme_settings
-    if (settings && typeof settings.icpUrl === 'string' && settings.icpUrl.trim()) {
-      return settings.icpUrl.trim()
-    }
-    return 'https://beian.miit.gov.cn/'
+    return publicSettings.value?.themeSettings.icpUrl || 'https://beian.miit.gov.cn/'
   })
 
   // 计算属性：公安备案配置
   const policeEnabled = computed<boolean>(() => {
-    const settings = publicSettings.value?.theme_settings
-    if (settings && typeof settings.policeEnabled === 'boolean') {
-      return settings.policeEnabled
-    }
-    return false
+    return publicSettings.value?.themeSettings.policeEnabled ?? false
   })
 
   const policeNumber = computed<string>(() => {
-    const settings = publicSettings.value?.theme_settings
-    if (settings && typeof settings.policeNumber === 'string') {
-      return settings.policeNumber
-    }
-    return ''
+    return publicSettings.value?.themeSettings.policeNumber ?? ''
   })
 
   const policeUrl = computed<string>(() => {
-    const settings = publicSettings.value?.theme_settings
-    if (settings && typeof settings.policeUrl === 'string' && settings.policeUrl.trim()) {
-      return settings.policeUrl.trim()
-    }
-    return ''
+    return publicSettings.value?.themeSettings.policeUrl ?? ''
   })
 
   // 计算属性：自定义背景配置
   const backgroundEnabled = computed<boolean>(() => {
-    const settings = publicSettings.value?.theme_settings
-    if (settings && typeof settings.backgroundEnabled === 'boolean') {
-      return settings.backgroundEnabled
-    }
-    return false
+    return publicSettings.value?.themeSettings.backgroundEnabled ?? false
   })
 
   const backgroundType = computed<'image' | 'video'>(() => {
-    const settings = publicSettings.value?.theme_settings
-    if (settings && typeof settings.backgroundType === 'string') {
-      const type = settings.backgroundType
-      if (type === 'image' || type === 'video') {
-        return type
-      }
-    }
-    return 'image'
+    return publicSettings.value?.themeSettings.backgroundType ?? 'image'
   })
 
   const lightBackgroundUrl = computed<string>(() => {
-    const settings = publicSettings.value?.theme_settings
-    if (settings && typeof settings.lightBackgroundUrl === 'string') {
-      return settings.lightBackgroundUrl.trim()
-    }
-    return ''
+    return publicSettings.value?.themeSettings.lightBackgroundUrl ?? ''
   })
 
   const darkBackgroundUrl = computed<string>(() => {
-    const settings = publicSettings.value?.theme_settings
-    if (settings && typeof settings.darkBackgroundUrl === 'string') {
-      return settings.darkBackgroundUrl.trim()
-    }
-    return ''
+    return publicSettings.value?.themeSettings.darkBackgroundUrl ?? ''
   })
 
   const backgroundBlur = computed<number>(() => {
-    const settings = publicSettings.value?.theme_settings
-    if (settings && typeof settings.backgroundBlur === 'number' && settings.backgroundBlur >= 0) {
-      return settings.backgroundBlur
-    }
-    return 0
+    return publicSettings.value?.themeSettings.backgroundBlur ?? 0
   })
 
   const backgroundOverlay = computed<number>(() => {
-    const settings = publicSettings.value?.theme_settings
-    if (settings && typeof settings.backgroundOverlay === 'number' && settings.backgroundOverlay >= -100 && settings.backgroundOverlay <= 100) {
-      return settings.backgroundOverlay
-    }
-    return 0
+    return publicSettings.value?.themeSettings.backgroundOverlay ?? 0
   })
 
   // 当 publicSettings 加载后，如果 localStorage 没有保存过视图模式或值为非法值，使用默认值
@@ -317,7 +212,6 @@ const useAppStore = defineStore('app', () => {
     nodeSelectedGroup,
     nodeViewMode,
     defaultViewMode,
-    rpcTransportMode,
     byteDecimals,
     alertEnabled,
     alertTitle,

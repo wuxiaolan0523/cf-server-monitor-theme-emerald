@@ -22,6 +22,7 @@ export interface SiteConfig {
   verified?: boolean
   turnstile_verified?: string | null
   show_long_history?: boolean
+  theme_options?: unknown
 }
 
 export interface SysConfig {
@@ -90,6 +91,33 @@ export interface ServersResponse {
   sysConfig?: SysConfig
 }
 
+export type NodeViewMode = 'card' | 'list'
+export type EarthViewMode = 'earth' | 'earth-stop' | 'maps' | 'cards' | 'hide'
+export type BackgroundType = 'image' | 'video'
+
+export interface ThemeSettings {
+  defaultViewMode: NodeViewMode
+  alertEnabled: boolean
+  alertTitle: string
+  alertContent: string
+  earthViewMode: EarthViewMode
+  visitorInfoCardEnabled: boolean
+  hideAdminEntryWhenLoggedOut: boolean
+  disablePageAnimation: boolean
+  icpEnabled: boolean
+  icpNumber: string
+  icpUrl: string
+  policeEnabled: boolean
+  policeNumber: string
+  policeUrl: string
+  backgroundEnabled: boolean
+  backgroundType: BackgroundType
+  lightBackgroundUrl: string
+  darkBackgroundUrl: string
+  backgroundBlur: number
+  backgroundOverlay: number
+}
+
 export interface PublicSettings {
   allow_cors: boolean
   custom_body: string
@@ -104,16 +132,7 @@ export interface PublicSettings {
   record_preserve_time: number
   sitename: string
   theme: string
-  theme_settings?: Record<string, unknown> | null
-  dataUpdateInterval?: number
-}
-
-export function getDataUpdateIntervalMs(settings?: PublicSettings): number {
-  const configured = settings?.theme_settings?.dataUpdateInterval ?? settings?.dataUpdateInterval
-  const interval = Number(configured)
-  if (Number.isFinite(interval) && interval >= 1 && interval <= 60)
-    return interval * 1000
-  return 2000
+  themeSettings: ThemeSettings
 }
 
 export interface MeInfo {
@@ -158,6 +177,106 @@ let cachedSiteConfigs: SiteConfig[] = []
 
 function enabled(value: unknown): boolean {
   return value === true || value === 'true'
+}
+
+const DEFAULT_THEME_SETTINGS: ThemeSettings = {
+  defaultViewMode: 'card',
+  alertEnabled: false,
+  alertTitle: '',
+  alertContent: '',
+  earthViewMode: 'earth',
+  visitorInfoCardEnabled: true,
+  hideAdminEntryWhenLoggedOut: false,
+  disablePageAnimation: false,
+  icpEnabled: false,
+  icpNumber: '',
+  icpUrl: 'https://beian.miit.gov.cn/',
+  policeEnabled: false,
+  policeNumber: '',
+  policeUrl: '',
+  backgroundEnabled: false,
+  backgroundType: 'image',
+  lightBackgroundUrl: '',
+  darkBackgroundUrl: '',
+  backgroundBlur: 0,
+  backgroundOverlay: 0,
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value)
+}
+
+function themeOptionValues(value: unknown): Record<string, unknown> {
+  if (!isRecord(value))
+    return {}
+
+  const values: Record<string, unknown> = {}
+  const configuration = value.configuration
+  if (Array.isArray(configuration)) {
+    for (const item of configuration) {
+      if (!isRecord(item) || typeof item.key !== 'string')
+        continue
+      values[item.key] = item.value
+    }
+  }
+
+  for (const [key, optionValue] of Object.entries(value)) {
+    if (key !== 'configuration')
+      values[key] = optionValue
+  }
+  return values
+}
+
+function themeBoolean(value: unknown, fallback: boolean): boolean {
+  if (typeof value === 'boolean')
+    return value
+  if (typeof value === 'string') {
+    if (value.toLowerCase() === 'true')
+      return true
+    if (value.toLowerCase() === 'false')
+      return false
+  }
+  return fallback
+}
+
+function themeString(value: unknown, fallback: string): string {
+  return typeof value === 'string' ? value.trim() : fallback
+}
+
+function themeNumber(value: unknown, fallback: number, min: number, max: number): number {
+  const number = Number(value)
+  return Number.isFinite(number) && number >= min && number <= max ? number : fallback
+}
+
+function themeEnum<T extends string>(value: unknown, fallback: T, values: readonly T[]): T {
+  return typeof value === 'string' && (values as readonly string[]).includes(value) ? value as T : fallback
+}
+
+/** Converts the CF Server Monitor `theme_options` wire format to UI-safe values. */
+export function adaptThemeOptions(value: unknown): ThemeSettings {
+  const options = themeOptionValues(value)
+  return {
+    defaultViewMode: themeEnum(options.defaultViewMode, DEFAULT_THEME_SETTINGS.defaultViewMode, ['card', 'list']),
+    alertEnabled: themeBoolean(options.alertEnabled, DEFAULT_THEME_SETTINGS.alertEnabled),
+    alertTitle: themeString(options.alertTitle, DEFAULT_THEME_SETTINGS.alertTitle),
+    alertContent: themeString(options.alertContent, DEFAULT_THEME_SETTINGS.alertContent),
+    earthViewMode: themeEnum(options.earthViewMode, DEFAULT_THEME_SETTINGS.earthViewMode, ['earth', 'earth-stop', 'maps', 'cards', 'hide']),
+    visitorInfoCardEnabled: themeBoolean(options.visitorInfoCardEnabled, DEFAULT_THEME_SETTINGS.visitorInfoCardEnabled),
+    hideAdminEntryWhenLoggedOut: themeBoolean(options.hideAdminEntryWhenLoggedOut, DEFAULT_THEME_SETTINGS.hideAdminEntryWhenLoggedOut),
+    disablePageAnimation: themeBoolean(options.disablePageAnimation, DEFAULT_THEME_SETTINGS.disablePageAnimation),
+    icpEnabled: themeBoolean(options.icpEnabled, DEFAULT_THEME_SETTINGS.icpEnabled),
+    icpNumber: themeString(options.icpNumber, DEFAULT_THEME_SETTINGS.icpNumber),
+    icpUrl: themeString(options.icpUrl, DEFAULT_THEME_SETTINGS.icpUrl),
+    policeEnabled: themeBoolean(options.policeEnabled, DEFAULT_THEME_SETTINGS.policeEnabled),
+    policeNumber: themeString(options.policeNumber, DEFAULT_THEME_SETTINGS.policeNumber),
+    policeUrl: themeString(options.policeUrl, DEFAULT_THEME_SETTINGS.policeUrl),
+    backgroundEnabled: themeBoolean(options.backgroundEnabled, DEFAULT_THEME_SETTINGS.backgroundEnabled),
+    backgroundType: themeEnum(options.backgroundType, DEFAULT_THEME_SETTINGS.backgroundType, ['image', 'video']),
+    lightBackgroundUrl: themeString(options.lightBackgroundUrl, DEFAULT_THEME_SETTINGS.lightBackgroundUrl),
+    darkBackgroundUrl: themeString(options.darkBackgroundUrl, DEFAULT_THEME_SETTINGS.darkBackgroundUrl),
+    backgroundBlur: themeNumber(options.backgroundBlur, DEFAULT_THEME_SETTINGS.backgroundBlur, 0, 100),
+    backgroundOverlay: themeNumber(options.backgroundOverlay, DEFAULT_THEME_SETTINGS.backgroundOverlay, -100, 100),
+  }
 }
 
 function finiteNumber(value: unknown): number {
@@ -590,14 +709,7 @@ export class CfMonitorApi {
       record_preserve_time: historyHours,
       sitename: hasMultipleApiBases() ? document.title : first?.site_title || document.title || 'CF Server Monitor',
       theme: 'emerald',
-      theme_settings: {
-        defaultViewMode: 'card',
-        earthViewMode: 'maps',
-        visitorInfoCardEnabled: false,
-        disablePageAnimation: true,
-        dataUpdateInterval: 1,
-      },
-      dataUpdateInterval: 1,
+      themeSettings: adaptThemeOptions(first?.theme_options),
     }
   }
 
