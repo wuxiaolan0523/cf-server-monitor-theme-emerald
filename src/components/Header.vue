@@ -55,8 +55,8 @@ const sitename = computed(() => appStore.publicSettings?.sitename || 'CF Server 
   >
     <div class="px-4 flex-between h-14 max-w-[1280px] mx-auto">
       <div class="flex items-center gap-3 cursor-pointer" @click="router.push('/')">
-        <Avatar class="size-8">
-          <AvatarImage :src="siteFavicon" :alt="sitename" />
+        <Avatar class="size-8 rounded-none">
+          <AvatarImage :src="siteFavicon" :alt="sitename" class="rounded-none" />
           <AvatarFallback>{{ sitename.slice(0, 1) }}</AvatarFallback>
         </Avatar>
         <h3 class="m-0 text-lg font-semibold">

@@ -3,6 +3,7 @@ import type { NodeData } from '@/stores/nodes'
 import type { CurrencyCode } from '@/utils/financeHelper'
 import { Icon } from '@iconify/vue'
 import { computed, defineAsyncComponent, onMounted, ref } from 'vue'
+import NodeEarthGlobe from '@/components/NodeEarthGlobe.vue'
 import { CardX } from '@/components/ui/card-x'
 import { DataTooltip } from '@/components/ui/data-tooltip'
 import { useBackgroundSurface } from '@/composables/useBackgroundSurface'
@@ -162,8 +163,9 @@ const exchangeRateRows = computed(() => financeRateCurrencies.map((currency) => 
     }).format(rate),
   }
 }))
+const showEarth = computed(() => appStore.earthViewMode === 'earth' || appStore.earthViewMode === 'earth-stop')
 const showMaps = computed(() => appStore.earthViewMode === 'maps')
-const showVisualPanel = computed(() => showMaps.value)
+const showVisualPanel = computed(() => showEarth.value || showMaps.value)
 const wrapperClass = computed(() => showVisualPanel.value
   ? 'p-4 grid grid-cols-12 grid-rows-1 gap-2 h-auto md:h-58'
   : 'p-4 grid grid-cols-1 gap-2 h-auto')
@@ -182,7 +184,8 @@ onMounted(async () => {
 
 <template>
   <div :class="wrapperClass">
-    <NodeEarthMaps v-if="showMaps" :nodes="globeNodes" class="col-span-12 col-start-1 md:col-span-6 md:col-start-7" />
+    <NodeEarthGlobe v-if="showEarth" :nodes="globeNodes" class="col-span-12 col-start-1 md:col-span-6 md:col-start-7" />
+    <NodeEarthMaps v-else-if="showMaps" :nodes="globeNodes" class="col-span-12 col-start-1 md:col-span-6 md:col-start-7" />
 
     <div :class="cardGridClass">
       <CardX
