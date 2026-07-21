@@ -1,8 +1,10 @@
-# <p align="center">Emerald Theme for CF Server Monitor</p>
+<h1 align="center">Emerald Theme for CF Server Monitor</h1>
 
 <p align="center">基于 Vue 3 + Vite + reka-ui + Tailwind CSS v4 构建的 CF Server Monitor主题</p>
 
 <p align="center">支持一键部署到 Vercel、Cloudflare、EdgeOne、Github Pages，也可自部署到 VPS 或其他静态服务器。</p>
+
+![preview](/docs/preview.png)
 
 ## 功能
 
