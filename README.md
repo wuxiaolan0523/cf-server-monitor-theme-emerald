@@ -2,6 +2,8 @@
 
 基于 Vue 3 + Vite + reka-ui + Tailwind CSS v4 构建的 [CF Server Monitor](https://github.com/huilang-me/CF-Server-Monitor) 主题
 
+支持一键部署到 Vercel、Cloudflare、Github Pages，也可自部署到 EdgeOne Page、VPS 等环境。
+
 ## 功能
 
 - 卡片和表格两种节点视图
@@ -15,18 +17,16 @@
 
 ## 一键部署
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/Tokinx/cf-server-monitor-theme-emerald)
+|  | Vercel | Cloudflare | Github Pages |
+| ---- | ---- | ---- | ---- |
+|  | [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/Tokinx/cf-server-monitor-theme-emerald) | [![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/Tokinx/cf-server-monitor-theme-emerald) | / |
+| API_BASE | | https://monitor.example.com | |
+| PROXY_BACKEND | **true** / false | true / **false** | **false** |
+| PROXY_WEBSOCKET | **false** | true / **false** | **false** |
 
-[![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/Tokinx/cf-server-monitor-theme-emerald)
-
-部署后在平台设置 `API_BASE`，然后重新部署或保存变量：
-
-- Vercel：设置 `API_BASE=https://monitor.example.com` 和 `PROXY_WEBSOCKET=false`。`build:vercel` 会自动启用 HTTP 代理，将 `/api`、`/flags`、`/os-icons` 转发到该后端；WebSocket 会直接连接 `API_BASE`，不经过 Vercel Function。后端必须允许 Vercel 站点的 `Origin`。
-- Cloudflare Workers：默认不启用代理。直连模式下，在构建环境设置 `API_BASE=https://monitor.example.com` 和 `PROXY_WEBSOCKET=false`；需要代理时，同时设置构建环境和 Worker 变量 `PROXY_BACKEND=true`，在构建环境设置 `PROXY_WEBSOCKET=true`，并设置运行时变量 `API_BASE`，此时 HTTP 和 WebSocket 都会被转发。
-- Cloudflare Pages：默认不启用代理。直连模式下，在构建环境设置 `API_BASE=https://monitor.example.com` 和 `PROXY_WEBSOCKET=false`；需要代理时设置 Pages 环境变量 `PROXY_BACKEND=true`、`PROXY_WEBSOCKET=true` 和 `API_BASE`，仓库内的 `functions/_middleware.ts` 会代理 HTTP 和 WebSocket。
-- GitHub Pages：首次使用前进入仓库 Settings > Pages，将 Build and deployment 的 Source 设置为 `GitHub Actions`；然后启用仓库的 `Deploy GitHub Pages` Action，并在 Settings > Secrets and variables > Actions > Variables 中设置 `API_BASE` 和 `PROXY_WEBSOCKET=false`。GitHub Pages 不能运行反向代理，因此使用后端直连模式。默认 `GITHUB_TOKEN` 无法代替这次 Pages 启用操作。
-
-`API_BASE` 是 CF Server Monitor Worker 的地址，例如 `https://monitor.example.com`。代理模式只支持单个后端地址。
+- `API_BASE` 是 CF Server Monitor Worker 的地址，例如 `https://monitor.example.com`。
+- `PROXY_BACKEND` 开启后 `/api`、`/flags`、`/os-icons` 将通过代理转发到 `API_BASE`，可起到一定的加速作用
+- `PROXY_WEBSOCKET` 开启后 WebSocket 将通过代理转发到 `API_BASE`，可起到一定的加速作用（Vercel & Github Pages 不支持）
 
 ## 开发
 
@@ -42,8 +42,6 @@ bun run dev
 API_BASE=https://monitor.example.com
 PROXY_BACKEND=false
 PROXY_WEBSOCKET=true
-TITLE=CF Server Monitor
-BACKGROUND_IMAGE=
 CSP_API=
 CSP_STATIC=
 BASE_PATH=./
@@ -64,6 +62,13 @@ bun run preview
 产物位于 `dist/`。纯静态部署时，构建会将 `API_BASE` 写入 `index.html` 的 `meta[name="apiBase"]`。跨域直连部署还需在 CF Server Monitor Worker 中将站点域名加入 `CORS_ALLOWED_ORIGINS`。
 
 GitHub Pages 项目站点可将 `BASE_PATH` 设置为仓库路径，例如 `/cf-server-monitor-theme-emerald/`；自定义域名和其他静态平台通常保留 `./` 即可。
+
+### 主题开发文档：
+
+- [CF-Server-Monitor项目地址](https://github.com/huilang-me/CF-Server-Monitor)
+- [开发指南](https://github.com/huilang-me/CF-Server-Monitor/blob/main/develop.md)
+- [前端API文档](https://github.com/huilang-me/CF-Server-Monitor/blob/main/theme-develop.md)
+- [后端API文档](https://github.com/huilang-me/CF-Server-Monitor/blob/main/API.md)
 
 ## 运行时约定
 
