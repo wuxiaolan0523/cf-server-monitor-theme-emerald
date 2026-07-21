@@ -153,18 +153,7 @@ export default defineConfig(({ mode, command }) => {
               ws: true,
               agent: outboundProxyAgent,
             },
-            '/flags': {
-              target: apiBases[0],
-              changeOrigin: true,
-              agent: outboundProxyAgent,
-              configure(proxy) {
-                proxy.on('proxyRes', (response) => {
-                  if (response.statusCode && response.statusCode >= 200 && response.statusCode < 400)
-                    response.headers['cache-control'] = 'public, max-age=31536000, immutable'
-                })
-              },
-            },
-            '/os-icons': {
+            '^/(flags|os-icons|favicon.ico)': {
               target: apiBases[0],
               changeOrigin: true,
               agent: outboundProxyAgent,
